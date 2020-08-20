@@ -1,0 +1,790 @@
+/**
+ * Especificaci�n JavaCC para la Pr�ctica 1 (Procesadores de Lenguajes)
+ * Javier Fabra - jfabra@unizar.es
+ * v1.1 - 2019/02/20
+ */
+
+options
+{
+  static = true;
+  ignore_case = true;
+}
+
+PARSER_BEGIN(MiniLenguaje)
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import ClasesJava.*;
+import java.util.ArrayList;
+
+public class MiniLenguaje
+{
+  public static boolean verbose = false;
+
+  public static Tabla_simbolos tabla_simbolos;
+
+  public static int nivel;
+
+  public static final int TBD = - 1;
+
+  public static void main(String args []) throws ParseException, FileNotFoundException
+  {
+    for (int i = 0; i < args.length; i++)
+    {
+      if (args [i].equals("-v")) 
+      verbose = true;
+    }
+    //MiniLenguaje parser = new MiniLenguaje(System.in);
+    try
+    {
+      MiniLenguaje parser = new MiniLenguaje(new FileInputStream(args [0]));
+    }
+    catch (FileNotFoundException e)
+    {
+      // TODO: Explicar instrucciones de ejecución
+      
+      System.err.print("ERROR: No se ha podido encontrar el archivo: " + args [0]);
+      System.exit(-1);
+    }
+    catch (ArrayIndexOutOfBoundsException e)
+    {
+      // TODO: Explicar instrucciones de ejecución
+      System.err.print("ERROR: No se ha especificado un archivo");
+      System.exit(-1);
+    }
+    
+    try
+    {
+      MiniLenguaje.programa(verbose);
+    }
+    catch (ParseException e)
+    {
+      System.err.println(e.getMessage());
+      System.exit(0);
+      //MiniLenguaje.ReInit(System.in);
+    }
+    catch (Error e)
+    {
+      e.printStackTrace();
+      System.err.println(e.getMessage());
+      System.exit(0);
+    }
+    catch (ExcepcionTablaSimbolos e)
+    {
+      System.err.println(e.getMessage());
+      System.exit(0);
+    }
+  }
+}
+
+PARSER_END(MiniLenguaje)
+
+SKIP :
+{
+  " "
+| "\r"
+| "\t"
+| "\n"
+| < "%" (~[ "\r", "\n" ])* ([ "\r", "\n" ]) >
+  {
+    if (MiniLenguaje.verbose) System.out.println("COMENTARIO");
+  }
+}
+
+TOKEN : /* PALABRAS RESERVADAS */
+{
+  < tCLASE : "clase" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CLASE");
+  }
+| < tMETODO : "metodo" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("METODO");
+  }
+| < tPROGRAMA : "programa" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("PROGRAMA");
+  }
+| < tVAR : "var" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("VAR");
+  }
+| < tAND : "and" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("AND");
+  }
+| < tOR : "or" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("OR");
+  }
+| < tNOT : "not" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("NOT");
+  }
+| < tPRINCIPIO : "principio" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("PRINCIPIO");
+  }
+| < tFIN : "fin" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("FIN");
+  }
+| < tSI : "si" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("SI");
+  }
+| < tENT : "ent" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ENT");
+  }
+| < tSI_NO : "si_no" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("SI_NO");
+  }
+| < tFSI : "fsi" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("FSI");
+  }
+| < tMQ : "mq" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MQ");
+  }
+| < tFMQ : "fmq" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("FMQ");
+  }
+| < tESCRIBIR : "escribir" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ESCRIBIR");
+  }
+| < tLEER : "leer" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("LEER");
+  }
+| < tMOD : "mod" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MOD");
+  }
+| < tTRUE : "true" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("TRUE");
+  }
+| < tFALSE : "false" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("FALSE");
+  }
+| < tENTACAR : "entacar" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ENTACAR");
+  }
+| < tCARAENT : "caraent" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CARAENT");
+  }
+| < tACCION : "accion" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ACCION");
+  }
+| < tVAL : "val" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("VAL");
+  }
+| < tREF : "ref" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("REF");
+  }
+}
+
+TOKEN : /* TIPOS DE DATOS */
+{
+  < tENTERO : "entero" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ENTERO");
+  }
+| < tDECIMAL : "decimal" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("DECIMAL");
+  }
+| < tBOOLEANO : "booleano" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("BOOLEANO");
+  }
+| < tCARACTER : "caracter" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CARACTER");
+  }
+}
+
+TOKEN : /* AGRUPACIONES */
+{
+  < tLLAVE_IZQ : "{" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("LLAVE_IZQ");
+  }
+| < tLLAVE_DCHA : "}" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("LLAVE_DCHA");
+  }
+| < tPARENTESIS_IZQ : "(" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("PARENTESIS_IZQ");
+  }
+| < tPARENTESIS_DCHA : ")" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("PARENTESIS_DCHA");
+  }
+| < tCORCHETE_IZQ : "[" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CORCHETE_IZQ");
+  }
+| < tCORCHETE_DCHA : "]" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CORCHETE_DCHA");
+  }
+}
+
+TOKEN : /* OPERADORES */
+{
+  < tOPAS : ":=" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("OPAS");
+  }
+| < tIGUAL : "=" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("IGUAL");
+  }
+| < tFIN_SENTENCIA : ";" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("FIN_SENTENCIA");
+  }
+| < tCOMA : "," >
+  {
+    if (MiniLenguaje.verbose) System.out.println("COMA");
+  }
+| < tMAS : "+" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MAS");
+  }
+| < tMENOS : "-" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MENOS");
+  }
+| < tPOR : "*" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("POR");
+  }
+| < tDIV :
+    "/"
+  | "div" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("DIV");
+  }
+| < tMAI : ">=" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MAYOR O IGUAL");
+  }
+| < tMEI : "<=" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MENOR O IGUAL");
+  }
+| < tNI : "<>" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("NI");
+  }
+| < tMAYOR : ">" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MAYOR");
+  }
+| < tMENOR : "<" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MENOR");
+  }
+}
+
+SKIP :
+{
+  "\"" : STRING
+}
+
+< STRING >
+SKIP :
+{
+  < "\"" > 
+  : DEFAULT
+}
+
+< STRING >
+TOKEN :
+{
+  < tSTRING : (~[ "\"" ])+ >
+  {
+    if (MiniLenguaje.verbose) System.out.println("STRING (Valor: " + matchedToken + ")");
+  }
+}
+
+TOKEN : /* VALORES */
+{
+  < tIDENTIFICADOR :
+    ([ "a"-"z", "_" ]) ([ "a"-"z", "_", "0"-"9" ])* ([ "a"-"z", "0"-"9" ])
+  | ([ "a"-"z", "_" ]) >
+  {
+    if (MiniLenguaje.verbose) System.out.println("IDENTIFICADOR (Valor: " + matchedToken + ")");
+  }
+| < tVALOR_ENTERO : ([ "0"-"9" ])+ >
+  {
+    if (MiniLenguaje.verbose) System.out.println("VALOR_ENTERO (Valor: " + matchedToken + ")");
+  }
+| < tVALOR_DECIMAL : ([ "0"-"9" ])+ "." ([ "0"-"9" ])+ >
+  {
+    if (MiniLenguaje.verbose) System.out.println("VALOR_DECIMAL (Valor: " + matchedToken + ")");
+  }
+}
+
+/************************************
+************* PROGRAMA **************
+*************************************/
+
+// <tPROGRAMA> <tIDENTIFICADOR> <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
+void programa(boolean verbose) throws ExcepcionTablaSimbolos :
+{}
+{
+  {
+    tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
+    nivel = 0;
+  }
+  < tPROGRAMA > < tIDENTIFICADOR >
+  {
+    tabla_simbolos.introducir_programa(token.image, TBD);
+  }
+  < tFIN_SENTENCIA > 
+  declaracion_variables() 
+  declaracion_acciones() 
+  bloque_sentencias()
+  {
+    tabla_simbolos.eliminar_programa();
+    System.out.println("Fin de programa");
+  }
+}
+
+// (declaracion()<tFIN_SENTENCIA>)*
+void declaracion_variables() throws ExcepcionTablaSimbolos :
+{}
+{
+  (
+    declaracion() < tFIN_SENTENCIA >
+  )*
+}
+
+// tipo_variables() identificadores()
+void declaracion() throws ExcepcionTablaSimbolos :
+{
+  Tipo_variable tipo;
+  ArrayList < String > identificadores;
+}
+{
+  tipo = tipo_variables() 
+  identificadores = identificadores()
+  {
+    for (String identificador : identificadores)
+    {
+      if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, TBD) == null)
+      {
+        throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));
+      }
+    }
+  }
+}
+
+// <tENTERO> | <tCARACTER> | <tBOOLEANO> | <tDECIMAL>
+Tipo_variable tipo_variables() :
+{}
+{
+  < tENTERO >
+  {
+    return Tipo_variable.ENTERO;
+  }
+| < tCARACTER >
+  {
+    return Tipo_variable.CHAR;
+  }
+| < tBOOLEANO >
+  {
+    return Tipo_variable.BOOLEANO;
+  }
+| < tDECIMAL >
+  {
+    return Tipo_variable.DECIMAL;
+  }
+}
+
+// <tIDENTIFICADOR>(<tCOMA><tIDENTIFICADOR>)*
+ArrayList < String > identificadores() :
+{
+  ArrayList < String > identificadores = new ArrayList();
+}
+{
+  < tIDENTIFICADOR >
+  {
+    identificadores.add(token.image);
+  }
+  (
+    < tCOMA > < tIDENTIFICADOR >
+    {
+      identificadores.add(token.image);
+    }
+  )*
+  {
+    return identificadores;
+  }
+}
+
+// (declaracion_accion())*
+void declaracion_acciones() throws ExcepcionTablaSimbolos :
+{}
+{
+  (
+    declaracion_accion()
+  )*
+}
+
+// cabecera_accion() <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
+void declaracion_accion() throws ExcepcionTablaSimbolos :
+{}
+{
+  cabecera_accion() < tFIN_SENTENCIA > 
+  declaracion_variables() 
+  declaracion_acciones() bloque_sentencias()
+}
+
+// <tACCION> <tIDENTIFICADOR> parametros_formales()
+void cabecera_accion() throws ExcepcionTablaSimbolos :
+{
+  ArrayList < Simbolo > parametros;
+  Simbolo accion;
+}
+{
+  < tACCION > < tIDENTIFICADOR >
+  {
+    accion = tabla_simbolos.introducir_accion(token.image, nivel, TBD);
+    if (accion == null)
+    {
+      throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(token.image));
+    }
+    nivel++;
+  }
+  parametros = parametros_formales()
+  {
+    for (Simbolo parametro : parametros)
+    {
+      accion.introducir_parametro(parametro);
+    }
+  }
+}
+
+// ((<tPARENTESIS_IZQ> parametros()) (<tFIN_SENTENCIA> parametros())* <tPARENTESIS_DCHA>)? 
+ArrayList < Simbolo > parametros_formales() throws ExcepcionTablaSimbolos :
+{
+  if (MiniLenguaje.verbose) System.out.println("Parametros formales \n");
+  ArrayList < Simbolo > parametros = new ArrayList < Simbolo > ();
+  ArrayList < Simbolo > masParametros;
+}
+{
+  (
+    (
+      < tPARENTESIS_IZQ > parametros = parametros()
+    )
+    (
+      < tFIN_SENTENCIA > masParametros = parametros()
+      {
+        parametros.addAll(masParametros);
+      }
+    )*
+    < tPARENTESIS_DCHA >
+  )?
+  {
+    return parametros;
+  }
+}
+
+// expresion() (<tCOMA> expresion())*
+ArrayList < Simbolo > lista_parametros(Clase_parametro clase, Tipo_variable tipo) throws ExcepcionTablaSimbolos :
+{
+  ArrayList < String > identificadores;
+  ArrayList < Simbolo > parametros = new ArrayList();
+  Simbolo parametro;
+}
+{
+  identificadores = identificadores()
+  {
+    for (String identificador : identificadores)
+    {
+      parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, TBD);
+      if (parametro == null)
+      {
+        throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));
+      }
+      else
+      {
+        parametros.add(parametro);
+      }
+    }
+    return parametros;
+  }
+}
+
+// clase_parametros() tipo_variables() lista_parametros()
+ArrayList < Simbolo > parametros() throws ExcepcionTablaSimbolos :
+{
+  Clase_parametro clase;
+  Tipo_variable tipo;
+  ArrayList < Simbolo > parametros;
+}
+{
+  clase = clase_parametros() 
+  tipo = tipo_variables() 
+  parametros = lista_parametros(clase, tipo)
+  {
+    return parametros;
+  }
+}
+
+// <tVAL> | <tREF>
+Clase_parametro clase_parametros() :
+{}
+{
+  < tVAL >
+  {
+    return Clase_parametro.VAL;
+  }
+| < tREF >
+  {
+    return Clase_parametro.REF;
+  }
+}
+
+// <tPRINCIPIO> lista_sentencias() <tFIN>
+void bloque_sentencias() :
+{}
+{
+  < tPRINCIPIO > lista_sentencias() < tFIN >
+  {
+    //System.out.println("######################################################################################");    
+    //System.out.println("Tabla antes de borrar nivel " + nivel);
+    //System.out.println(tabla_simbolos);
+    tabla_simbolos.ocultar_parametros(nivel);
+    tabla_simbolos.eliminar_variables(nivel);
+    tabla_simbolos.eliminar_acciones(nivel);
+    nivel--;
+    //System.out.println("\nTabla despues de borrar nivel " + (nivel + 1));
+    //System.out.println(tabla_simbolos);
+    //System.out.println("######################################################################################");
+  }
+}
+
+// (sentencia())* 
+void lista_sentencias() :
+{}
+{
+  (
+    sentencia()
+  )+
+}
+
+/*
+leer()  < tFIN_SENTENCIA >|
+  escribir() < tFIN_SENTENCIA >|
+  < tIDENTIFICADOR > [asignacion() |  invocacion_accion() ] < tFIN_SENTENCIA > |
+  seleccion()  |
+  mientras_que()
+  */
+void sentencia() :
+{}
+{
+  leer() < tFIN_SENTENCIA >
+| 
+  escribir() < tFIN_SENTENCIA >
+| 
+  < tIDENTIFICADOR >
+  [
+    asignacion()
+  | invocacion_accion()
+  ]
+  < tFIN_SENTENCIA >
+| 
+  seleccion()
+| 
+  mientras_que()
+}
+
+// <tLEER> <tPARENTESIS_IZQ> lista_asignables() <tPARENTESIS_DCHA>
+void leer() :
+{}
+{
+  < tLEER > < tPARENTESIS_IZQ > lista_asignables() < tPARENTESIS_DCHA >
+}
+
+// <tIDENTIFICADOR> (<tCOMA> <tIDENTIFICADOR>)*
+void lista_asignables() :
+{}
+{
+  < tIDENTIFICADOR > (< tCOMA > < tIDENTIFICADOR >)*
+}
+
+// <tESCRIBIR> <tPARENTESIS_IZQ> lista_escribibles() <tPARENTESIS_DCHA>
+void escribir() :
+{}
+{
+  < tESCRIBIR > < tPARENTESIS_IZQ > lista_escribibles() < tPARENTESIS_DCHA >
+}
+
+// expresion() (<tCOMA> expresion())*
+void lista_escribibles() :
+{}
+{
+  expresion()
+  (
+    < tCOMA > expresion()
+  )*
+}
+
+// <tOPAS> expresion() 
+void asignacion() :
+{}
+{
+  < tOPAS > expresion()
+}
+
+// argumentos() 
+void invocacion_accion() :
+{}
+{
+  argumentos()
+}
+
+// <tMQ> expresion() lista_sentencias() <tFMQ>
+void mientras_que() :
+{}
+{
+  < tMQ > expresion() lista_sentencias() < tFMQ >
+}
+
+// <tSI> expresion() <tENT> lista_sentencias() (<tSI_NO> lista_sentencias())?  <tFSI>
+void seleccion() :
+{}
+{
+  < tSI > expresion() < tENT > lista_sentencias()
+  (
+    < tSI_NO > lista_sentencias()
+  )?
+  < tFSI >
+}
+
+// <tPARENTESIS_IZQ> (lista_expresiones())? <tPARENTESIS_DCHA>
+void argumentos() :
+{}
+{
+  < tPARENTESIS_IZQ >
+  (
+    lista_expresiones()
+  )?
+  < tPARENTESIS_DCHA >
+}
+
+// expresion() (<tCOMA> expresion())*
+void lista_expresiones() :
+{}
+{
+  expresion()
+  (
+    < tCOMA > expresion()
+  )*
+}
+
+// expresion_simple() (operador_relacional() expresion_simple())*
+void expresion() :
+{}
+{
+  expresion_simple()
+  (
+    operador_relacional() expresion_simple()
+  )*
+}
+
+// <tMAYOR> | <tMENOR> | <tMAI> | <tMEI> | <tNI> | <tIGUAL>
+void operador_relacional() :
+{}
+{
+  < tMAYOR >
+| < tMENOR >
+| < tMAI >
+| < tMEI >
+| < tNI >
+| < tIGUAL >
+}
+
+// termino() (operador_aditivo() termino())*
+void expresion_simple() :
+{}
+{
+  termino()
+  (
+    operador_aditivo() termino()
+  )*
+}
+
+// <tMAS> | <tMENOS> | <tOR>
+void operador_aditivo() :
+{}
+{
+  < tMAS >
+| < tMENOS >
+| < tOR >
+}
+
+// factor() (operador_multiplicativo() factor())* 
+void termino() :
+{}
+{
+  factor()
+  (
+    operador_multiplicativo() factor()
+  )*
+}
+
+// <tPOR> | <tDIV> | <tMOD> | <tAND>
+void operador_multiplicativo() :
+{}
+{
+  < tPOR >
+| < tDIV >
+| < tMOD >
+| < tAND >
+}
+
+/*
+	< tMENOS > factor()
+| < tNOT > factor()
+| < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tENTACAR > <tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tCARAENT > <tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tIDENTIFICADOR >
+| < tVALOR_ENTERO >
+| < tVALOR_DECIMAL >
+| < tSTRING >
+| < tTRUE >
+| < tFALSE >
+*/
+void factor() :
+{}
+{
+  < tMENOS > factor()
+| < tNOT > factor()
+| < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tENTACAR > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tCARAENT > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tIDENTIFICADOR >
+| < tVALOR_ENTERO >
+| < tVALOR_DECIMAL >
+| < tSTRING >
+| < tTRUE >
+| < tFALSE >
+}

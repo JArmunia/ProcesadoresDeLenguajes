@@ -1,0 +1,746 @@
+/**
+ * Especificación JavaCC para la Práctica 1 (Procesadores de Lenguajes)
+ * Javier Fabra - jfabra@unizar.es
+ * v1.1 - 2019/02/20
+ */
+
+options
+{
+  static = true;
+  ignore_case = true;
+}
+
+PARSER_BEGIN(MiniLenguaje)
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.Arrays;
+import ClasesJava.*;
+
+public class MiniLenguaje
+{
+  public static boolean verbose = false;
+
+  static boolean errores = false;
+
+  public static Tabla_simbolos tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
+
+  public static int dir = 0;
+
+  private static int nivel = 0;
+
+  public static void main(String args []) throws ParseException, FileNotFoundException
+  {
+    for (int i = 0; i < args.length; i++)
+    {
+      if (args [i].equals("-v")) 
+      verbose = true;
+    }
+    //MiniLenguaje parser = new MiniLenguaje(System.in);
+    MiniLenguaje parser = new MiniLenguaje(new FileInputStream(args [0]));
+    try
+    {
+      MiniLenguaje.programa(verbose);
+    }
+    catch (Error e)
+    {
+      int lineaE = MiniLenguajeTokenManager.input_stream.getBeginLine();
+      int columE = MiniLenguajeTokenManager.input_stream.getBeginColumn();
+      String error = MiniLenguajeTokenManager.input_stream.GetImage();
+      String [] s = e.getMessage().split(" ");
+      System.out.println("ERROR LEXICO (" + lineaE + ", " + (columE + 1) + "): simbolo no reconocido: " + s [9]);
+      errores = true;
+    }
+    catch (Exception e)
+    {
+      int lineaE = MiniLenguajeTokenManager.input_stream.getBeginLine();
+      int columE = MiniLenguajeTokenManager.input_stream.getBeginColumn();
+      String error = MiniLenguajeTokenManager.input_stream.GetImage();
+      String [] s = e.getMessage().split(" ");
+      System.out.println("ERROR SINTACTICO (" + lineaE + ", " + (columE + 1) + "): Se encontro " + s [3] + "\"" + " en la linea" + Arrays.toString(s));
+      errores = true;
+      MiniLenguaje.ReInit(System.in);
+    }
+  }
+}
+
+PARSER_END(MiniLenguaje)
+
+SKIP :
+{
+  " "
+| "\r"
+| "\t"
+| "\n"
+| < "%" (~[ "\r", "\n" ])* ([ "\r", "\n" ]) >
+  {
+    if (MiniLenguaje.verbose) System.out.println("COMENTARIO");
+  }
+}
+
+TOKEN : /* PALABRAS RESERVADAS */
+{
+  < tCLASE : "clase" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CLASE");
+  }
+| < tMETODO : "metodo" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("METODO");
+  }
+| < tPROGRAMA : "programa" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("PROGRAMA");
+  }
+| < tVAR : "var" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("VAR");
+  }
+| < tAND : "and" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("AND");
+  }
+| < tOR : "or" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("OR");
+  }
+| < tNOT : "not" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("NOT");
+  }
+| < tPRINCIPIO : "principio" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("PRINCIPIO");
+  }
+| < tFIN : "fin" >
+  {
+    System.out.println(MiniLenguaje.tabla_simbolos.toString());
+    if (MiniLenguaje.verbose) System.out.println("FIN");
+  }
+| < tSI : "si" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("SI");
+  }
+| < tENT : "ent" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ENT");
+  }
+| < tSI_NO : "si_no" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("SI_NO");
+  }
+| < tFSI : "fsi" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("FSI");
+  }
+| < tMQ : "mq" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MQ");
+  }
+| < tFMQ : "fmq" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("FMQ");
+  }
+| < tESCRIBIR : "escribir" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ESCRIBIR");
+  }
+| < tLEER : "leer" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("LEER");
+  }
+| < tMOD : "mod" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MOD");
+  }
+| < tTRUE : "true" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("TRUE");
+  }
+| < tFALSE : "false" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("FALSE");
+  }
+| < tENTACAR : "entacar" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ENTACAR");
+  }
+| < tCARAENT : "caraent" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CARAENT");
+  }
+| < tACCION : "accion" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ACCION");
+  }
+| < tVAL : "val" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("VAL");
+  }
+| < tREF : "ref" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("REF");
+  }
+}
+
+TOKEN : /* TIPOS DE DATOS */
+{
+  < tENTERO : "entero" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("ENTERO");
+  }
+| < tDECIMAL : "decimal" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("DECIMAL");
+  }
+| < tBOOLEANO : "booleano" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("BOOLEANO");
+  }
+| < tCARACTER : "caracter" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CARACTER");
+  }
+}
+
+TOKEN : /* AGRUPACIONES */
+{
+  < tLLAVE_IZQ : "{" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("LLAVE_IZQ");
+  }
+| < tLLAVE_DCHA : "}" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("LLAVE_DCHA");
+  }
+| < tPARENTESIS_IZQ : "(" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("PARENTESIS_IZQ");
+  }
+| < tPARENTESIS_DCHA : ")" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("PARENTESIS_DCHA");
+  }
+| < tCORCHETE_IZQ : "[" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CORCHETE_IZQ");
+  }
+| < tCORCHETE_DCHA : "]" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CORCHETE_DCHA");
+  }
+}
+
+/*< LLAVE >
+TOKEN :
+{
+  < tIDENTIFICADOR_LLAVE : ([ "a"-"z", "_" ]) ([ "a"-"z", "_", "0"-"9" ])* > // TODO: ponerle que no pueda acabar en "_"
+  {
+        if (MiniLenguaje.verbose) System.out.println("IDENTIFICADOR DENTRO DE LLAVE(Valor: " + matchedToken + ")");
+  }
+| < tLLAVE_DCHA_LLAVE : "}" >
+  {
+        if (MiniLenguaje.verbose) System.out.println("LLAVE_DCHA");
+  }
+  : DEFAULT
+}*/
+
+
+
+TOKEN : /* OPERADORES */
+{
+  < tOPAS : ":=" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("OPAS");
+  }
+| < tIGUAL : "=" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("IGUAL");
+  }
+| < tFIN_SENTENCIA : ";" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("FIN_SENTENCIA");
+  }
+| < tCOMA : "," >
+  {
+    if (MiniLenguaje.verbose) System.out.println("COMA");
+  }
+| < tMAS : "+" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MAS");
+  }
+| < tMENOS : "-" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MENOS");
+  }
+| < tPOR : "*" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("POR");
+  }
+| < tDIV :
+    "/"
+  | "div" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("DIV");
+  }
+| < tMAI : ">=" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MAYOR O IGUAL");
+  }
+| < tMEI : "<=" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MENOR O IGUAL");
+  }
+| < tNI : "<>" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("NI");
+  }
+| < tMAYOR : ">" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MAYOR");
+  }
+| < tMENOR : "<" >
+  {
+    if (MiniLenguaje.verbose) System.out.println("MENOR");
+  }
+}
+
+SKIP :
+{
+  "\"" : STRING
+}
+
+< STRING >
+SKIP :
+{
+  < "\"" > 
+  : DEFAULT
+}
+
+< STRING >
+TOKEN :
+{
+  < tSTRING : (~[ "\"" ])+ >
+  {
+    if (MiniLenguaje.verbose) System.out.println("STRING (Valor: " + matchedToken + ")");
+  }
+}
+
+TOKEN : /* VALORES */
+{
+  < tIDENTIFICADOR :
+    ([ "a"-"z", "_" ]) ([ "a"-"z", "_", "0"-"9" ])* ([ "a"-"z", "0"-"9" ])
+  | ([ "a"-"z", "_" ]) >
+  {
+    if (MiniLenguaje.verbose) System.out.println("IDENTIFICADOR (Valor: " + matchedToken + ")");
+  }
+| < tVALOR_ENTERO : ([ "0"-"9" ])+ >
+  {
+    if (MiniLenguaje.verbose) System.out.println("VALOR_ENTERO (Valor: " + matchedToken + ")");
+  }
+| < tVALOR_DECIMAL : ([ "0"-"9" ])+ "." ([ "0"-"9" ])+ >
+  {
+    if (MiniLenguaje.verbose) System.out.println("VALOR_DECIMAL (Valor: " + matchedToken + ")");
+  }
+}
+
+/*int programa() :
+{}
+{
+  (
+    < tCLASE >
+  | < tMETODO >
+  | < tENTERO >
+  | < tDECIMAL >
+  | < tLLAVE_IZQ >
+  | < tLLAVE_DCHA >
+  | < tVALOR_ENTERO >
+  | < tVALOR_DECIMAL >
+  | < tPROGRAMA >
+  | < tIGUAL >
+  | < tMAS >
+  | < tMENOS >
+  | < tPOR >
+  | < tDIV >
+  | < tFIN_SENTENCIA >
+  | < tSTRING >
+  | < tCOMA >
+  | < tBOOLEANO >
+  | < tCARACTER >
+  | < tPARENTESIS_IZQ >
+  | < tPARENTESIS_DCHA >
+  | < tCORCHETE_IZQ >
+  | < tCORCHETE_DCHA >
+  | < tIDENTIFICADOR >
+  | < tVAR >
+  | < tAND >
+  | < tOR >
+  | < tNOT >
+  | < tPRINCIPIO >
+  | < tFIN >
+  | < tSI >
+  | < tENT >
+  | < tSI_NO >
+  | < tFSI >
+  | < tMQ >
+  | < tFMQ >
+  | < tESCRIBIR >
+  | < tLEER >
+  | < tMOD >
+  | < tTRUE >
+  | < tFALSE >
+  | < tENTACAR >
+  | < tCARAENT >
+  | < tACCION >
+  | < tVAL >
+  | < tREF >
+  | < tMAYOR >
+  | < tMENOR >
+  | < tMAI >
+  | < tMEI >
+  | < tNI >
+  | < tOPAS >
+  )+
+  {
+    return 0;
+  }
+}*/
+
+/*void programa() :
+{
+}
+{
+  < tCLASE > < tIDENTIFICADOR > < tLLAVE_IZQ >
+  (
+    metodo()
+  )+
+  < tLLAVE_DCHA > < EOF >
+}
+
+void sentencia() :
+{
+}
+{
+  < tENTERO > < tIDENTIFICADOR > < tOPAS > < tVALOR_ENTERO > < tFIN_SENTENCIA >
+| < tDECIMAL > < tIDENTIFICADOR > < tOPAS > < tVALOR_DECIMAL > < tFIN_SENTENCIA >
+}
+
+void metodo() :
+{
+}
+{
+  < tMETODO > < tIDENTIFICADOR > "{"
+  (
+    sentencia()
+  )*
+  "}"
+}*/
+
+/**
+* <tPROGRAMA><tIDENTIFICADOR><tFIN_SENTENCIA>
+*/
+void programa(boolean verbose) throws ParseException :
+{
+}
+{
+  < tPROGRAMA > < tIDENTIFICADOR >
+  {
+    MiniLenguaje.tabla_simbolos.introducir_programa(token.image, dir);
+    System.out.println(token + " " + token.image);
+  }
+  < tFIN_SENTENCIA > declaracion_variables() declaracion_acciones() bloque_sentencias()
+  {
+    MiniLenguaje.tabla_simbolos.eliminar_variables(nivel);
+    MiniLenguaje.tabla_simbolos.eliminar_parametros_ocultos(nivel + 1);
+    MiniLenguaje.tabla_simbolos.eliminar_programa();
+  }
+}
+
+/**
+* (declaracion() <tFIN_SENTENCIA>)*
+*/
+void declaracion_variables() :
+{}
+{
+  (
+    declaracion() < tFIN_SENTENCIA >
+  )*
+}
+
+/**
+*
+*/
+void declaracion() :
+{
+  Tipo_variable tVar;
+}
+{
+  tVar = tipo_variables() 
+  identificadores(tVar)
+}
+
+Tipo_variable tipo_variables() :
+{}
+{
+  < tENTERO >
+  {
+    return Tipo_variable.ENTERO;
+  }
+| < tCARACTER >
+  {
+    return Tipo_variable.CHAR;
+  }
+| < tBOOLEANO >
+  {
+    return Tipo_variable.BOOLEANO;
+  }
+  //| < tDECIMAL >
+}
+
+void identificadores(Tipo_variable tVar) :
+{}
+{
+  < tIDENTIFICADOR >
+  {
+    MiniLenguaje.tabla_simbolos.introducir_variable(token.image, tVar, nivel, dir);
+  }
+  (< tCOMA > < tIDENTIFICADOR >)*
+  {
+    MiniLenguaje.tabla_simbolos.introducir_variable(token.image, tVar, nivel, dir);
+  }
+}
+
+void declaracion_acciones() :
+{}
+{
+  (
+    declaracion_accion()
+  )*
+}
+
+void declaracion_accion() :
+{}
+{
+  cabecera_accion() < tFIN_SENTENCIA > declaracion_variables() declaracion_acciones() bloque_sentencias()
+}
+
+void cabecera_accion() :
+{}
+{
+  < tACCION > < tIDENTIFICADOR > parametros_formales()
+}
+
+void parametros_formales() :
+{
+  if (MiniLenguaje.verbose) System.out.println("Parametros formales \n");
+}
+{
+  (
+    (
+      < tPARENTESIS_IZQ > parametros()
+    )
+    (
+      < tFIN_SENTENCIA > parametros()
+    )*
+    < tPARENTESIS_DCHA >
+  )?
+}
+
+void lista_parametros() :
+{}
+{
+  expresion()
+  (
+    < tCOMA > expresion()
+  )*	
+}
+
+void parametros() :
+{}
+{
+  clase_parametros() tipo_variables() lista_parametros()
+}
+
+void clase_parametros() :
+{}
+{
+  < tVAL >
+| < tREF >
+}
+
+void bloque_sentencias() :
+{}
+{
+  < tPRINCIPIO > lista_sentencias() < tFIN >
+}
+
+void lista_sentencias() :
+{}
+{
+  (
+    sentencia()
+  )*
+}
+
+void sentencia() :
+{}
+{
+  leer() < tFIN_SENTENCIA >
+| 
+  escribir() < tFIN_SENTENCIA >
+| 
+  < tIDENTIFICADOR >
+  [
+    asignacion()
+  | invocacion_accion()
+  ]
+  < tFIN_SENTENCIA >
+| 
+  seleccion()
+| 
+  mientras_que()
+}
+
+void leer() :
+{}
+{
+  < tLEER > < tPARENTESIS_IZQ > lista_asignables() < tPARENTESIS_DCHA >
+}
+
+void lista_asignables() :
+{}
+{
+  < tIDENTIFICADOR > (< tCOMA > < tIDENTIFICADOR >)*
+}
+
+void escribir() :
+{}
+{
+  < tESCRIBIR > < tPARENTESIS_IZQ > lista_escribibles() < tPARENTESIS_DCHA >
+}
+
+void lista_escribibles() :
+{}
+{
+  expresion()
+  (
+    < tCOMA > expresion()
+  )*
+}
+
+void asignacion() :
+{}
+{
+  < tOPAS > expresion()
+}
+
+void invocacion_accion() :
+{}
+{
+  argumentos()
+}
+
+void mientras_que() :
+{}
+{
+  < tMQ > expresion() lista_sentencias() < tFMQ >
+}
+
+void seleccion() :
+{}
+{
+  < tSI > expresion() < tENT > lista_sentencias()
+  (
+    < tSI_NO > lista_sentencias()
+  )?
+  < tFSI >
+}
+
+void argumentos() :
+{}
+{
+  < tPARENTESIS_IZQ >
+  (
+    lista_expresiones()
+  )?
+  < tPARENTESIS_DCHA >
+}
+
+void lista_expresiones() :
+{}
+{
+  expresion()
+  (
+    < tCOMA > expresion()
+  )*
+}
+
+void expresion() :
+{}
+{
+  expresion_simple()
+  (
+    operador_relacional() expresion_simple()
+  )*
+}
+
+void operador_relacional() :
+{}
+{
+  < tMAYOR >
+| < tMENOR >
+| < tMAI >
+| < tMEI >
+| < tNI >
+| < tIGUAL >
+}
+
+void expresion_simple() :
+{}
+{
+  termino()
+  (
+    operador_aditivo() termino()
+  )*
+}
+
+void operador_aditivo() :
+{}
+{
+  < tMAS >
+| < tMENOS >
+| < tOR >
+}
+
+void termino() :
+{}
+{
+  factor()
+  (
+    operador_multiplicativo() factor()
+  )*
+}
+
+void operador_multiplicativo() :
+{}
+{
+  < tPOR >
+| < tDIV >
+| < tMOD >
+| < tAND >
+}
+
+void factor() :
+{}
+{
+  < tMENOS > factor()
+| < tNOT > factor()
+| < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tENTACAR > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tCARAENT > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tIDENTIFICADOR >
+| < tVALOR_ENTERO >
+| < tVALOR_DECIMAL >
+| < tSTRING >
+| < tTRUE >
+| < tFALSE >
+}
