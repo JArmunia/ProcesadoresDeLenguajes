@@ -21,24 +21,24 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       verbose = true;
     }
     //MiniLenguaje parser = new MiniLenguaje(System.in);
+    FileInputStream file = null;
     try
     {
-      MiniLenguaje parser = new MiniLenguaje(new FileInputStream(args [0]));
+      file = new FileInputStream(args [0]);
+      MiniLenguaje parser = new MiniLenguaje(file);
     }
     catch (FileNotFoundException e)
     {
       // TODO: Explicar instrucciones de ejecución
-
       System.err.print("ERROR: No se ha podido encontrar el archivo: " + args [0]);
-      System.exit(-1);
+      System.exit(- 1);
     }
     catch (ArrayIndexOutOfBoundsException e)
     {
       // TODO: Explicar instrucciones de ejecución
       System.err.print("ERROR: No se ha especificado un archivo");
-      System.exit(-1);
+      System.exit(- 1);
     }
-
     try
     {
       MiniLenguaje.programa(verbose);
@@ -46,7 +46,6 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     catch (ParseException e)
     {
       System.err.println(e.getMessage());
-      System.exit(0);
       //MiniLenguaje.ReInit(System.in);
     }
     catch (Error e)
@@ -55,11 +54,42 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       System.err.println(e.getMessage());
       System.exit(0);
     }
-    catch (ExcepcionTablaSimbolos e)
+  }
+
+  private static void error_skipto(int kind)
+  {
+    //ParseException e = generateParseException();
+    //System.out.println(e.toString());
+    Token t = getNextToken();
+    System.out.println(t);
+    while (t.kind != kind)
     {
-      System.err.println(e.getMessage());
-      System.exit(0);
+      t = getNextToken();
+      System.out.println(t);
+
     }
+  }
+
+  private static void error_sintactico(ParseException e, String msg)
+  {
+    //correcto = false;
+    //Token lastRead = MiniLenguaje.getNextToken();
+    //System.err.println("ERROR SINTACTICO (<" + lastRead.beginLine + ", " + 
+    //lastRead.beginColumn + ">) : <Simbolo obtenido: '" + lastRead.image + 
+    //"'. " + msg + ">");
+  }
+
+  private static void error_sintactico(ParseException e)
+  {
+    //error_sintactico(e, "");
+    System.err.println(e.getMessage());
+    //Token lastRead = MiniLenguaje.getNextToken();
+    error_skipto(tFIN_SENTENCIA);
+  }
+
+  private static void error_semantico(Exception e)
+  {
+    System.err.println(e.getMessage());
   }
 
 /************************************
@@ -67,52 +97,67 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 *************************************/
 
 // <tPROGRAMA> <tIDENTIFICADOR> <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
-  static final public void programa(boolean verbose) throws ParseException, ExcepcionTablaSimbolos {
-    tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
-    nivel = 0;
-    jj_consume_token(tPROGRAMA);
-    jj_consume_token(tIDENTIFICADOR);
-    tabla_simbolos.introducir_programa(token.image, TBD);
-    jj_consume_token(tFIN_SENTENCIA);
-    declaracion_variables();
-    declaracion_acciones();
-    bloque_sentencias();
-    tabla_simbolos.eliminar_programa();
-    System.out.println("Fin de programa");
+  static final public void programa(boolean verbose) throws ParseException {
+    try {
+      tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
+      nivel = 0;
+      jj_consume_token(tPROGRAMA);
+      jj_consume_token(tIDENTIFICADOR);
+      tabla_simbolos.introducir_programa(token.image, TBD);
+      jj_consume_token(tFIN_SENTENCIA);
+      declaracion_variables();
+      declaracion_acciones();
+      bloque_sentencias();
+      tabla_simbolos.eliminar_programa();
+      System.out.println("Fin de programa");
+    } catch (ParseException e) {
+    error_sintactico(e);
+    }
   }
 
 // (declaracion()<tFIN_SENTENCIA>)*
-  static final public void declaracion_variables() throws ParseException, ExcepcionTablaSimbolos {
-    label_1:
-    while (true) {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tENTERO:
-      case tDECIMAL:
-      case tBOOLEANO:
-      case tCARACTER:
-        ;
-        break;
-      default:
-        jj_la1[0] = jj_gen;
-        break label_1;
+  static final public void declaracion_variables() throws ParseException {
+    try {
+      label_1:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tENTERO:
+        case tDECIMAL:
+        case tBOOLEANO:
+        case tCARACTER:
+          ;
+          break;
+        default:
+          jj_la1[0] = jj_gen;
+          break label_1;
+        }
+        declaracion();
+        jj_consume_token(tFIN_SENTENCIA);
       }
-      declaracion();
-      jj_consume_token(tFIN_SENTENCIA);
+    } catch (ParseException e) {
+    error_sintactico(e);
+    System.out.println("Entra aqui");
     }
   }
 
 // tipo_variables() identificadores()
-  static final public void declaracion() throws ParseException, ExcepcionTablaSimbolos {
+  static final public void declaracion() throws ParseException {
   Tipo_variable tipo;
   ArrayList < String > identificadores;
-    tipo = tipo_variables();
-    identificadores = identificadores();
-    for (String identificador : identificadores)
-    {
-      if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, TBD) == null)
+    try {
+      tipo = tipo_variables();
+      identificadores = identificadores();
+      for (String identificador : identificadores)
       {
-        {if (true) throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));}
+        if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, TBD) == null)
+        {
+          {if (true) throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));}
+        }
       }
+    } catch (ParseException e) {
+    error_sintactico(e);
+    } catch (ExcepcionTablaSimbolos e) {
+    error_semantico(e);
     }
   }
 
@@ -146,134 +191,170 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 // <tIDENTIFICADOR>(<tCOMA><tIDENTIFICADOR>)*
   static final public ArrayList < String > identificadores() throws ParseException {
   ArrayList < String > identificadores = new ArrayList();
-    jj_consume_token(tIDENTIFICADOR);
-    identificadores.add(token.image);
-    label_2:
-    while (true) {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tCOMA:
-        ;
-        break;
-      default:
-        jj_la1[2] = jj_gen;
-        break label_2;
-      }
-      jj_consume_token(tCOMA);
+    try {
       jj_consume_token(tIDENTIFICADOR);
       identificadores.add(token.image);
-    }
+      label_2:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tCOMA:
+          ;
+          break;
+        default:
+          jj_la1[2] = jj_gen;
+          break label_2;
+        }
+        jj_consume_token(tCOMA);
+        jj_consume_token(tIDENTIFICADOR);
+      identificadores.add(token.image);
+      }
+      {if (true) return identificadores;}
+    } catch (ParseException e) {
+    error_sintactico(e);
     {if (true) return identificadores;}
+    }
     throw new Error("Missing return statement in function");
   }
 
 // (declaracion_accion())*
-  static final public void declaracion_acciones() throws ParseException, ExcepcionTablaSimbolos {
-    label_3:
-    while (true) {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tACCION:
-        ;
-        break;
-      default:
-        jj_la1[3] = jj_gen;
-        break label_3;
+  static final public void declaracion_acciones() throws ParseException {
+    try {
+      label_3:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tACCION:
+          ;
+          break;
+        default:
+          jj_la1[3] = jj_gen;
+          break label_3;
+        }
+        declaracion_accion();
       }
-      declaracion_accion();
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 
 // cabecera_accion() <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
-  static final public void declaracion_accion() throws ParseException, ExcepcionTablaSimbolos {
-    cabecera_accion();
-    jj_consume_token(tFIN_SENTENCIA);
-    declaracion_variables();
-    declaracion_acciones();
-    bloque_sentencias();
+  static final public void declaracion_accion() throws ParseException {
+    try {
+      cabecera_accion();
+      jj_consume_token(tFIN_SENTENCIA);
+      declaracion_variables();
+      declaracion_acciones();
+      bloque_sentencias();
+    } catch (ParseException e) {
+    error_sintactico(e);
+    }
   }
 
 // <tACCION> <tIDENTIFICADOR> parametros_formales()
-  static final public void cabecera_accion() throws ParseException, ExcepcionTablaSimbolos {
+  static final public void cabecera_accion() throws ParseException {
   ArrayList < Simbolo > parametros;
   Simbolo accion;
-    jj_consume_token(tACCION);
-    jj_consume_token(tIDENTIFICADOR);
-    accion = tabla_simbolos.introducir_accion(token.image, nivel, TBD);
-    if (accion == null)
-    {
-      {if (true) throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(token.image));}
-    }
-    nivel++;
-    parametros = parametros_formales();
-    for (Simbolo parametro : parametros)
-    {
-      accion.introducir_parametro(parametro);
+    try {
+      jj_consume_token(tACCION);
+      jj_consume_token(tIDENTIFICADOR);
+      accion = tabla_simbolos.introducir_accion(token.image, nivel, TBD);
+      if (accion == null)
+      {
+        {if (true) throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(token.image));}
+      }
+      nivel++;
+      parametros = parametros_formales();
+      for (Simbolo parametro : parametros)
+      {
+        accion.introducir_parametro(parametro);
+      }
+    } catch (ParseException e) {
+    error_sintactico(e);
+    } catch (ExcepcionTablaSimbolos e) {
+    error_semantico(e);
     }
   }
 
 // ((<tPARENTESIS_IZQ> parametros()) (<tFIN_SENTENCIA> parametros())* <tPARENTESIS_DCHA>)? 
-  static final public ArrayList < Simbolo > parametros_formales() throws ParseException, ExcepcionTablaSimbolos {
+  static final public ArrayList < Simbolo > parametros_formales() throws ParseException {
   if (MiniLenguaje.verbose) System.out.println("Parametros formales \u005cn");
   ArrayList < Simbolo > parametros = new ArrayList < Simbolo > ();
   ArrayList < Simbolo > masParametros;
-    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case tPARENTESIS_IZQ:
-      jj_consume_token(tPARENTESIS_IZQ);
-      parametros = parametros();
-      label_4:
-      while (true) {
-        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case tFIN_SENTENCIA:
-          ;
-          break;
-        default:
-          jj_la1[4] = jj_gen;
-          break label_4;
+    try {
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tPARENTESIS_IZQ:
+        jj_consume_token(tPARENTESIS_IZQ);
+        parametros = parametros();
+        label_4:
+        while (true) {
+          switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+          case tFIN_SENTENCIA:
+            ;
+            break;
+          default:
+            jj_la1[4] = jj_gen;
+            break label_4;
+          }
+          jj_consume_token(tFIN_SENTENCIA);
+          masParametros = parametros();
+      parametros.addAll(masParametros);
         }
-        jj_consume_token(tFIN_SENTENCIA);
-        masParametros = parametros();
-        parametros.addAll(masParametros);
+        jj_consume_token(tPARENTESIS_DCHA);
+        break;
+      default:
+        jj_la1[5] = jj_gen;
+        ;
       }
-      jj_consume_token(tPARENTESIS_DCHA);
-      break;
-    default:
-      jj_la1[5] = jj_gen;
-      ;
-    }
+      {if (true) return parametros;}
+    } catch (ParseException e) {
+    error_sintactico(e);
     {if (true) return parametros;}
+    }
     throw new Error("Missing return statement in function");
   }
 
 // expresion() (<tCOMA> expresion())*
-  static final public ArrayList < Simbolo > lista_parametros(Clase_parametro clase, Tipo_variable tipo) throws ParseException, ExcepcionTablaSimbolos {
+  static final public ArrayList < Simbolo > lista_parametros(Clase_parametro clase, Tipo_variable tipo) throws ParseException {
   ArrayList < String > identificadores;
   ArrayList < Simbolo > parametros = new ArrayList();
   Simbolo parametro;
-    identificadores = identificadores();
-    for (String identificador : identificadores)
-    {
-      parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, TBD);
-      if (parametro == null)
+    try {
+      identificadores = identificadores();
+      for (String identificador : identificadores)
       {
-        {if (true) throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));}
+        parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, TBD);
+        if (parametro == null)
+        {
+          {if (true) throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));}
+        }
+        else
+        {
+          parametros.add(parametro);
+        }
       }
-      else
-      {
-        parametros.add(parametro);
-      }
-    }
+      {if (true) return parametros;}
+    } catch (ParseException e) {
+    error_sintactico(e);
     {if (true) return parametros;}
+    } catch (ExcepcionTablaSimbolos e) {
+    error_semantico(e);
+    }
     throw new Error("Missing return statement in function");
   }
 
 // clase_parametros() tipo_variables() lista_parametros()
-  static final public ArrayList < Simbolo > parametros() throws ParseException, ExcepcionTablaSimbolos {
+  static final public ArrayList < Simbolo > parametros() throws ParseException {
   Clase_parametro clase;
   Tipo_variable tipo;
-  ArrayList < Simbolo > parametros;
-    clase = clase_parametros();
-    tipo = tipo_variables();
-    parametros = lista_parametros(clase, tipo);
+  ArrayList < Simbolo > parametros = new ArrayList();
+    try {
+      clase = clase_parametros();
+      tipo = tipo_variables();
+      parametros = lista_parametros(clase, tipo);
+      {if (true) return parametros;}
+    } catch (ParseException e) {
+    error_sintactico(e);
     {if (true) return parametros;}
+    }
     throw new Error("Missing return statement in function");
   }
 
@@ -298,39 +379,48 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
 // <tPRINCIPIO> lista_sentencias() <tFIN>
   static final public void bloque_sentencias() throws ParseException {
-    jj_consume_token(tPRINCIPIO);
-    lista_sentencias();
-    jj_consume_token(tFIN);
-    //System.out.println("######################################################################################");    
-    //System.out.println("Tabla antes de borrar nivel " + nivel);
-    //System.out.println(tabla_simbolos);
-    tabla_simbolos.ocultar_parametros(nivel);
-    tabla_simbolos.eliminar_variables(nivel);
-    tabla_simbolos.eliminar_acciones(nivel);
-    nivel--;
-    //System.out.println("\nTabla despues de borrar nivel " + (nivel + 1));
-    //System.out.println(tabla_simbolos);
-    //System.out.println("######################################################################################");
+    try {
+      jj_consume_token(tPRINCIPIO);
+      lista_sentencias();
+      jj_consume_token(tFIN);
+      //System.out.println("######################################################################################");    
+      //System.out.println("Tabla antes de borrar nivel " + nivel);
+      //System.out.println(tabla_simbolos);
+      tabla_simbolos.ocultar_parametros(nivel);
+      tabla_simbolos.eliminar_variables(nivel);
+      // Elimino los parámetros ocultos al eliminar las acciones
+      tabla_simbolos.eliminar_acciones(nivel);
+      nivel--;
+      //System.out.println("\nTabla despues de borrar nivel " + (nivel + 1));
+      //System.out.println(tabla_simbolos);
+      //System.out.println("######################################################################################");
 
+    } catch (ParseException e) {
+    error_sintactico(e);
+    }
   }
 
 // (sentencia())* 
   static final public void lista_sentencias() throws ParseException {
-    label_5:
-    while (true) {
-      sentencia();
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tSI:
-      case tMQ:
-      case tESCRIBIR:
-      case tLEER:
-      case tIDENTIFICADOR:
-        ;
-        break;
-      default:
-        jj_la1[7] = jj_gen;
-        break label_5;
+    try {
+      label_5:
+      while (true) {
+        sentencia();
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tSI:
+        case tMQ:
+        case tESCRIBIR:
+        case tLEER:
+        case tIDENTIFICADOR:
+          ;
+          break;
+        default:
+          jj_la1[7] = jj_gen;
+          break label_5;
+        }
       }
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 
@@ -342,203 +432,251 @@ leer()  < tFIN_SENTENCIA >|
   mientras_que()
   */
   static final public void sentencia() throws ParseException {
-    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case tLEER:
-      leer();
-      jj_consume_token(tFIN_SENTENCIA);
-      break;
-    case tESCRIBIR:
-      escribir();
-      jj_consume_token(tFIN_SENTENCIA);
-      break;
-    case tIDENTIFICADOR:
-      jj_consume_token(tIDENTIFICADOR);
+    try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tPARENTESIS_IZQ:
-      case tOPAS:
+      case tLEER:
+        leer();
+        jj_consume_token(tFIN_SENTENCIA);
+        break;
+      case tESCRIBIR:
+        escribir();
+        jj_consume_token(tFIN_SENTENCIA);
+        break;
+      case tIDENTIFICADOR:
+        jj_consume_token(tIDENTIFICADOR);
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case tOPAS:
-          asignacion();
-          break;
         case tPARENTESIS_IZQ:
-          invocacion_accion();
+        case tOPAS:
+          switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+          case tOPAS:
+            asignacion();
+            break;
+          case tPARENTESIS_IZQ:
+            invocacion_accion();
+            break;
+          default:
+            jj_la1[8] = jj_gen;
+            jj_consume_token(-1);
+            throw new ParseException();
+          }
           break;
         default:
-          jj_la1[8] = jj_gen;
-          jj_consume_token(-1);
-          throw new ParseException();
+          jj_la1[9] = jj_gen;
+          ;
         }
+        jj_consume_token(tFIN_SENTENCIA);
+        break;
+      case tSI:
+        seleccion();
+        break;
+      case tMQ:
+        mientras_que();
         break;
       default:
-        jj_la1[9] = jj_gen;
-        ;
+        jj_la1[10] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
       }
-      jj_consume_token(tFIN_SENTENCIA);
-      break;
-    case tSI:
-      seleccion();
-      break;
-    case tMQ:
-      mientras_que();
-      break;
-    default:
-      jj_la1[10] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 
 // <tLEER> <tPARENTESIS_IZQ> lista_asignables() <tPARENTESIS_DCHA>
   static final public void leer() throws ParseException {
-    jj_consume_token(tLEER);
-    jj_consume_token(tPARENTESIS_IZQ);
-    lista_asignables();
-    jj_consume_token(tPARENTESIS_DCHA);
+    try {
+      jj_consume_token(tLEER);
+      jj_consume_token(tPARENTESIS_IZQ);
+      lista_asignables();
+      jj_consume_token(tPARENTESIS_DCHA);
+    } catch (ParseException e) {
+    error_sintactico(e);
+    }
   }
 
 // <tIDENTIFICADOR> (<tCOMA> <tIDENTIFICADOR>)*
   static final public void lista_asignables() throws ParseException {
-    jj_consume_token(tIDENTIFICADOR);
-    label_6:
-    while (true) {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tCOMA:
-        ;
-        break;
-      default:
-        jj_la1[11] = jj_gen;
-        break label_6;
-      }
-      jj_consume_token(tCOMA);
+    try {
       jj_consume_token(tIDENTIFICADOR);
+      label_6:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tCOMA:
+          ;
+          break;
+        default:
+          jj_la1[11] = jj_gen;
+          break label_6;
+        }
+        jj_consume_token(tCOMA);
+        jj_consume_token(tIDENTIFICADOR);
+      }
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 
 // <tESCRIBIR> <tPARENTESIS_IZQ> lista_escribibles() <tPARENTESIS_DCHA>
   static final public void escribir() throws ParseException {
-    jj_consume_token(tESCRIBIR);
-    jj_consume_token(tPARENTESIS_IZQ);
-    lista_escribibles();
-    jj_consume_token(tPARENTESIS_DCHA);
+    try {
+      jj_consume_token(tESCRIBIR);
+      jj_consume_token(tPARENTESIS_IZQ);
+      lista_escribibles();
+      jj_consume_token(tPARENTESIS_DCHA);
+    } catch (ParseException e) {
+    error_sintactico(e);
+    }
   }
 
 // expresion() (<tCOMA> expresion())*
   static final public void lista_escribibles() throws ParseException {
-    expresion();
-    label_7:
-    while (true) {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tCOMA:
-        ;
-        break;
-      default:
-        jj_la1[12] = jj_gen;
-        break label_7;
-      }
-      jj_consume_token(tCOMA);
+    try {
       expresion();
+      label_7:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tCOMA:
+          ;
+          break;
+        default:
+          jj_la1[12] = jj_gen;
+          break label_7;
+        }
+        jj_consume_token(tCOMA);
+        expresion();
+      }
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 
 // <tOPAS> expresion() 
   static final public void asignacion() throws ParseException {
-    jj_consume_token(tOPAS);
-    expresion();
+    try {
+      jj_consume_token(tOPAS);
+      expresion();
+    } catch (ParseException e) {
+    error_sintactico(e);
+    }
   }
 
 // argumentos() 
   static final public void invocacion_accion() throws ParseException {
-    argumentos();
+    try {
+      argumentos();
+    } catch (ParseException e) {
+    error_sintactico(e);
+    }
   }
 
 // <tMQ> expresion() lista_sentencias() <tFMQ>
   static final public void mientras_que() throws ParseException {
-    jj_consume_token(tMQ);
-    expresion();
-    lista_sentencias();
-    jj_consume_token(tFMQ);
+    try {
+      jj_consume_token(tMQ);
+      expresion();
+      lista_sentencias();
+      jj_consume_token(tFMQ);
+    } catch (ParseException e) {
+    error_sintactico(e);
+    }
   }
 
 // <tSI> expresion() <tENT> lista_sentencias() (<tSI_NO> lista_sentencias())?  <tFSI>
   static final public void seleccion() throws ParseException {
-    jj_consume_token(tSI);
-    expresion();
-    jj_consume_token(tENT);
-    lista_sentencias();
-    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case tSI_NO:
-      jj_consume_token(tSI_NO);
+    try {
+      jj_consume_token(tSI);
+      expresion();
+      jj_consume_token(tENT);
       lista_sentencias();
-      break;
-    default:
-      jj_la1[13] = jj_gen;
-      ;
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tSI_NO:
+        jj_consume_token(tSI_NO);
+        lista_sentencias();
+        break;
+      default:
+        jj_la1[13] = jj_gen;
+        ;
+      }
+      jj_consume_token(tFSI);
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
-    jj_consume_token(tFSI);
   }
 
 // <tPARENTESIS_IZQ> (lista_expresiones())? <tPARENTESIS_DCHA>
   static final public void argumentos() throws ParseException {
-    jj_consume_token(tPARENTESIS_IZQ);
-    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case tNOT:
-    case tTRUE:
-    case tFALSE:
-    case tENTACAR:
-    case tCARAENT:
-    case tPARENTESIS_IZQ:
-    case tMENOS:
-    case tSTRING:
-    case tIDENTIFICADOR:
-    case tVALOR_ENTERO:
-    case tVALOR_DECIMAL:
-      lista_expresiones();
-      break;
-    default:
-      jj_la1[14] = jj_gen;
-      ;
+    try {
+      jj_consume_token(tPARENTESIS_IZQ);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tNOT:
+      case tTRUE:
+      case tFALSE:
+      case tENTACAR:
+      case tCARAENT:
+      case tPARENTESIS_IZQ:
+      case tMENOS:
+      case tSTRING:
+      case tIDENTIFICADOR:
+      case tVALOR_ENTERO:
+      case tVALOR_DECIMAL:
+        lista_expresiones();
+        break;
+      default:
+        jj_la1[14] = jj_gen;
+        ;
+      }
+      jj_consume_token(tPARENTESIS_DCHA);
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
-    jj_consume_token(tPARENTESIS_DCHA);
   }
 
 // expresion() (<tCOMA> expresion())*
   static final public void lista_expresiones() throws ParseException {
-    expresion();
-    label_8:
-    while (true) {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tCOMA:
-        ;
-        break;
-      default:
-        jj_la1[15] = jj_gen;
-        break label_8;
-      }
-      jj_consume_token(tCOMA);
+    try {
       expresion();
+      label_8:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tCOMA:
+          ;
+          break;
+        default:
+          jj_la1[15] = jj_gen;
+          break label_8;
+        }
+        jj_consume_token(tCOMA);
+        expresion();
+      }
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 
 // expresion_simple() (operador_relacional() expresion_simple())*
   static final public void expresion() throws ParseException {
-    expresion_simple();
-    label_9:
-    while (true) {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tIGUAL:
-      case tMAI:
-      case tMEI:
-      case tNI:
-      case tMAYOR:
-      case tMENOR:
-        ;
-        break;
-      default:
-        jj_la1[16] = jj_gen;
-        break label_9;
-      }
-      operador_relacional();
+    try {
       expresion_simple();
+      label_9:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tIGUAL:
+        case tMAI:
+        case tMEI:
+        case tNI:
+        case tMAYOR:
+        case tMENOR:
+          ;
+          break;
+        default:
+          jj_la1[16] = jj_gen;
+          break label_9;
+        }
+        operador_relacional();
+        expresion_simple();
+      }
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 
@@ -572,21 +710,25 @@ leer()  < tFIN_SENTENCIA >|
 
 // termino() (operador_aditivo() termino())*
   static final public void expresion_simple() throws ParseException {
-    termino();
-    label_10:
-    while (true) {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tOR:
-      case tMAS:
-      case tMENOS:
-        ;
-        break;
-      default:
-        jj_la1[18] = jj_gen;
-        break label_10;
-      }
-      operador_aditivo();
+    try {
       termino();
+      label_10:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tOR:
+        case tMAS:
+        case tMENOS:
+          ;
+          break;
+        default:
+          jj_la1[18] = jj_gen;
+          break label_10;
+        }
+        operador_aditivo();
+        termino();
+      }
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 
@@ -611,22 +753,26 @@ leer()  < tFIN_SENTENCIA >|
 
 // factor() (operador_multiplicativo() factor())* 
   static final public void termino() throws ParseException {
-    factor();
-    label_11:
-    while (true) {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tAND:
-      case tMOD:
-      case tPOR:
-      case tDIV:
-        ;
-        break;
-      default:
-        jj_la1[20] = jj_gen;
-        break label_11;
-      }
-      operador_multiplicativo();
+    try {
       factor();
+      label_11:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tAND:
+        case tMOD:
+        case tPOR:
+        case tDIV:
+          ;
+          break;
+        default:
+          jj_la1[20] = jj_gen;
+          break label_11;
+        }
+        operador_multiplicativo();
+        factor();
+      }
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 
@@ -666,54 +812,58 @@ leer()  < tFIN_SENTENCIA >|
 | < tFALSE >
 */
   static final public void factor() throws ParseException {
-    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case tMENOS:
-      jj_consume_token(tMENOS);
-      factor();
-      break;
-    case tNOT:
-      jj_consume_token(tNOT);
-      factor();
-      break;
-    case tPARENTESIS_IZQ:
-      jj_consume_token(tPARENTESIS_IZQ);
-      expresion();
-      jj_consume_token(tPARENTESIS_DCHA);
-      break;
-    case tENTACAR:
-      jj_consume_token(tENTACAR);
-      jj_consume_token(tPARENTESIS_IZQ);
-      expresion();
-      jj_consume_token(tPARENTESIS_DCHA);
-      break;
-    case tCARAENT:
-      jj_consume_token(tCARAENT);
-      jj_consume_token(tPARENTESIS_IZQ);
-      expresion();
-      jj_consume_token(tPARENTESIS_DCHA);
-      break;
-    case tIDENTIFICADOR:
-      jj_consume_token(tIDENTIFICADOR);
-      break;
-    case tVALOR_ENTERO:
-      jj_consume_token(tVALOR_ENTERO);
-      break;
-    case tVALOR_DECIMAL:
-      jj_consume_token(tVALOR_DECIMAL);
-      break;
-    case tSTRING:
-      jj_consume_token(tSTRING);
-      break;
-    case tTRUE:
-      jj_consume_token(tTRUE);
-      break;
-    case tFALSE:
-      jj_consume_token(tFALSE);
-      break;
-    default:
-      jj_la1[22] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
+    try {
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tMENOS:
+        jj_consume_token(tMENOS);
+        factor();
+        break;
+      case tNOT:
+        jj_consume_token(tNOT);
+        factor();
+        break;
+      case tPARENTESIS_IZQ:
+        jj_consume_token(tPARENTESIS_IZQ);
+        expresion();
+        jj_consume_token(tPARENTESIS_DCHA);
+        break;
+      case tENTACAR:
+        jj_consume_token(tENTACAR);
+        jj_consume_token(tPARENTESIS_IZQ);
+        expresion();
+        jj_consume_token(tPARENTESIS_DCHA);
+        break;
+      case tCARAENT:
+        jj_consume_token(tCARAENT);
+        jj_consume_token(tPARENTESIS_IZQ);
+        expresion();
+        jj_consume_token(tPARENTESIS_DCHA);
+        break;
+      case tIDENTIFICADOR:
+        jj_consume_token(tIDENTIFICADOR);
+        break;
+      case tVALOR_ENTERO:
+        jj_consume_token(tVALOR_ENTERO);
+        break;
+      case tVALOR_DECIMAL:
+        jj_consume_token(tVALOR_DECIMAL);
+        break;
+      case tSTRING:
+        jj_consume_token(tSTRING);
+        break;
+      case tTRUE:
+        jj_consume_token(tTRUE);
+        break;
+      case tFALSE:
+        jj_consume_token(tFALSE);
+        break;
+      default:
+        jj_la1[22] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+    } catch (ParseException e) {
+    error_sintactico(e);
     }
   }
 

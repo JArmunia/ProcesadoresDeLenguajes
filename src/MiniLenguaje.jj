@@ -34,24 +34,24 @@ public class MiniLenguaje
       verbose = true;
     }
     //MiniLenguaje parser = new MiniLenguaje(System.in);
+    FileInputStream file = null;
     try
     {
-      MiniLenguaje parser = new MiniLenguaje(new FileInputStream(args [0]));
+      file = new FileInputStream(args [0]);
+      MiniLenguaje parser = new MiniLenguaje(file);
     }
     catch (FileNotFoundException e)
     {
       // TODO: Explicar instrucciones de ejecución
-      
       System.err.print("ERROR: No se ha podido encontrar el archivo: " + args [0]);
-      System.exit(-1);
+      System.exit(- 1);
     }
     catch (ArrayIndexOutOfBoundsException e)
     {
       // TODO: Explicar instrucciones de ejecución
       System.err.print("ERROR: No se ha especificado un archivo");
-      System.exit(-1);
+      System.exit(- 1);
     }
-    
     try
     {
       MiniLenguaje.programa(verbose);
@@ -59,7 +59,6 @@ public class MiniLenguaje
     catch (ParseException e)
     {
       System.err.println(e.getMessage());
-      System.exit(0);
       //MiniLenguaje.ReInit(System.in);
     }
     catch (Error e)
@@ -68,11 +67,42 @@ public class MiniLenguaje
       System.err.println(e.getMessage());
       System.exit(0);
     }
-    catch (ExcepcionTablaSimbolos e)
+  }
+
+  private static void error_skipto(int kind)
+  {
+    //ParseException e = generateParseException();
+    //System.out.println(e.toString());
+    Token t = getNextToken();
+    System.out.println(t);
+    while (t.kind != kind)
     {
-      System.err.println(e.getMessage());
-      System.exit(0);
+      t = getNextToken();
+      System.out.println(t);
+      
     }
+  }
+
+  private static void error_sintactico(ParseException e, String msg)
+  {
+    //correcto = false;
+    //Token lastRead = MiniLenguaje.getNextToken();
+    //System.err.println("ERROR SINTACTICO (<" + lastRead.beginLine + ", " + 
+    //lastRead.beginColumn + ">) : <Simbolo obtenido: '" + lastRead.image + 
+    //"'. " + msg + ">");
+  }
+
+  private static void error_sintactico(ParseException e)
+  {
+    //error_sintactico(e, "");
+    System.err.println(e.getMessage());
+    //Token lastRead = MiniLenguaje.getNextToken();
+    error_skipto(tFIN_SENTENCIA);
+  }
+
+  private static void error_semantico(Exception e)
+  {
+    System.err.println(e.getMessage());
   }
 }
 
@@ -344,53 +374,79 @@ TOKEN : /* VALORES */
 *************************************/
 
 // <tPROGRAMA> <tIDENTIFICADOR> <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
-void programa(boolean verbose) throws ExcepcionTablaSimbolos :
+void programa(boolean verbose) :
 {}
 {
+  try
   {
-    tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
-    nivel = 0;
+    {
+      tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
+      nivel = 0;
+    }
+    < tPROGRAMA > < tIDENTIFICADOR >
+    {
+      tabla_simbolos.introducir_programa(token.image, TBD);
+    }
+    < tFIN_SENTENCIA > 
+    declaracion_variables() 
+    declaracion_acciones() 
+    bloque_sentencias()
+    {
+      tabla_simbolos.eliminar_programa();
+      System.out.println("Fin de programa");
+    }
   }
-  < tPROGRAMA > < tIDENTIFICADOR >
+  catch (ParseException e)
   {
-    tabla_simbolos.introducir_programa(token.image, TBD);
-  }
-  < tFIN_SENTENCIA > 
-  declaracion_variables() 
-  declaracion_acciones() 
-  bloque_sentencias()
-  {
-    tabla_simbolos.eliminar_programa();
-    System.out.println("Fin de programa");
+    error_sintactico(e);
   }
 }
 
 // (declaracion()<tFIN_SENTENCIA>)*
-void declaracion_variables() throws ExcepcionTablaSimbolos :
+void declaracion_variables() :
 {}
 {
-  (
+  try
+  {
+    (
     declaracion() < tFIN_SENTENCIA >
-  )*
+    ) *
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+    System.out.println("Entra aqui");
+  }
 }
 
 // tipo_variables() identificadores()
-void declaracion() throws ExcepcionTablaSimbolos :
+void declaracion() :
 {
   Tipo_variable tipo;
   ArrayList < String > identificadores;
 }
 {
-  tipo = tipo_variables() 
-  identificadores = identificadores()
+  try
   {
-    for (String identificador : identificadores)
+    tipo = tipo_variables() 
+    identificadores = identificadores()
     {
-      if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, TBD) == null)
+      for (String identificador : identificadores)
       {
-        throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));
+        if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, TBD) == null)
+        {
+          throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));
+        }
       }
     }
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
+  catch (ExcepcionTablaSimbolos e)
+  {
+    error_semantico(e);
   }
 }
 
@@ -422,127 +478,188 @@ ArrayList < String > identificadores() :
   ArrayList < String > identificadores = new ArrayList();
 }
 {
-  < tIDENTIFICADOR >
+  try
   {
-    identificadores.add(token.image);
-  }
-  (
+    < tIDENTIFICADOR >
+    {
+      identificadores.add(token.image);
+    }
+    (
     < tCOMA > < tIDENTIFICADOR >
     {
       identificadores.add(token.image);
     }
-  )*
+    ) *
+    {
+      return identificadores;
+    }
+  }
+  catch (ParseException e)
   {
+    error_sintactico(e);
     return identificadores;
   }
 }
 
 // (declaracion_accion())*
-void declaracion_acciones() throws ExcepcionTablaSimbolos :
+void declaracion_acciones() :
 {}
 {
-  (
+  try
+  {
+    (
     declaracion_accion()
-  )*
+    ) *
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // cabecera_accion() <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
-void declaracion_accion() throws ExcepcionTablaSimbolos :
+void declaracion_accion() :
 {}
 {
-  cabecera_accion() < tFIN_SENTENCIA > 
-  declaracion_variables() 
-  declaracion_acciones() bloque_sentencias()
+  try
+  {
+    cabecera_accion() < tFIN_SENTENCIA > 
+    declaracion_variables() 
+    declaracion_acciones() bloque_sentencias()
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tACCION> <tIDENTIFICADOR> parametros_formales()
-void cabecera_accion() throws ExcepcionTablaSimbolos :
+void cabecera_accion() :
 {
   ArrayList < Simbolo > parametros;
   Simbolo accion;
 }
 {
-  < tACCION > < tIDENTIFICADOR >
+  try
   {
-    accion = tabla_simbolos.introducir_accion(token.image, nivel, TBD);
-    if (accion == null)
+    < tACCION > < tIDENTIFICADOR >
     {
-      throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(token.image));
+      accion = tabla_simbolos.introducir_accion(token.image, nivel, TBD);
+      if (accion == null)
+      {
+        throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(token.image));
+      }
+      nivel++;
     }
-    nivel++;
+    parametros = parametros_formales()
+    {
+      for (Simbolo parametro : parametros)
+      {
+        accion.introducir_parametro(parametro);
+      }
+    }
   }
-  parametros = parametros_formales()
+  catch (ParseException e)
   {
-    for (Simbolo parametro : parametros)
-    {
-      accion.introducir_parametro(parametro);
-    }
+    error_sintactico(e);
+  }
+  catch (ExcepcionTablaSimbolos e)
+  {
+    error_semantico(e);
   }
 }
 
 // ((<tPARENTESIS_IZQ> parametros()) (<tFIN_SENTENCIA> parametros())* <tPARENTESIS_DCHA>)? 
-ArrayList < Simbolo > parametros_formales() throws ExcepcionTablaSimbolos :
+ArrayList < Simbolo > parametros_formales() :
 {
   if (MiniLenguaje.verbose) System.out.println("Parametros formales \n");
   ArrayList < Simbolo > parametros = new ArrayList < Simbolo > ();
   ArrayList < Simbolo > masParametros;
 }
 {
-  (
-    (
-      < tPARENTESIS_IZQ > parametros = parametros()
-    )
-    (
-      < tFIN_SENTENCIA > masParametros = parametros()
-      {
-        parametros.addAll(masParametros);
-      }
-    )*
-    < tPARENTESIS_DCHA >
-  )?
+  try
   {
+    (
+    (
+    < tPARENTESIS_IZQ > parametros = parametros()
+    ) 
+    (
+    < tFIN_SENTENCIA > masParametros = parametros()
+    {
+      parametros.addAll(masParametros);
+    }
+    ) * 
+    < tPARENTESIS_DCHA >
+    ) ?
+    {
+      return parametros;
+    }
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
     return parametros;
   }
 }
 
 // expresion() (<tCOMA> expresion())*
-ArrayList < Simbolo > lista_parametros(Clase_parametro clase, Tipo_variable tipo) throws ExcepcionTablaSimbolos :
+ArrayList < Simbolo > lista_parametros(Clase_parametro clase, Tipo_variable tipo) :
 {
   ArrayList < String > identificadores;
   ArrayList < Simbolo > parametros = new ArrayList();
   Simbolo parametro;
 }
 {
-  identificadores = identificadores()
+  try
   {
-    for (String identificador : identificadores)
+    identificadores = identificadores()
     {
-      parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, TBD);
-      if (parametro == null)
+      for (String identificador : identificadores)
       {
-        throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));
+        parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, TBD);
+        if (parametro == null)
+        {
+          throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));
+        }
+        else
+        {
+          parametros.add(parametro);
+        }
       }
-      else
-      {
-        parametros.add(parametro);
-      }
+      return parametros;
     }
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
     return parametros;
+  }
+  catch (ExcepcionTablaSimbolos e)
+  {
+    error_semantico(e);
   }
 }
 
 // clase_parametros() tipo_variables() lista_parametros()
-ArrayList < Simbolo > parametros() throws ExcepcionTablaSimbolos :
+ArrayList < Simbolo > parametros() :
 {
   Clase_parametro clase;
   Tipo_variable tipo;
-  ArrayList < Simbolo > parametros;
+  ArrayList < Simbolo > parametros = new ArrayList();
 }
 {
-  clase = clase_parametros() 
-  tipo = tipo_variables() 
-  parametros = lista_parametros(clase, tipo)
+  try
   {
+    clase = clase_parametros() 
+    tipo = tipo_variables() 
+    parametros = lista_parametros(clase, tipo)
+    {
+      return parametros;
+    }
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
     return parametros;
   }
 }
@@ -565,18 +682,26 @@ Clase_parametro clase_parametros() :
 void bloque_sentencias() :
 {}
 {
-  < tPRINCIPIO > lista_sentencias() < tFIN >
+  try
   {
-    //System.out.println("######################################################################################");    
-    //System.out.println("Tabla antes de borrar nivel " + nivel);
-    //System.out.println(tabla_simbolos);
-    tabla_simbolos.ocultar_parametros(nivel);
-    tabla_simbolos.eliminar_variables(nivel);
-    tabla_simbolos.eliminar_acciones(nivel);
-    nivel--;
-    //System.out.println("\nTabla despues de borrar nivel " + (nivel + 1));
-    //System.out.println(tabla_simbolos);
-    //System.out.println("######################################################################################");
+    < tPRINCIPIO > lista_sentencias() < tFIN >
+    {
+      //System.out.println("######################################################################################");    
+      //System.out.println("Tabla antes de borrar nivel " + nivel);
+      //System.out.println(tabla_simbolos);
+      tabla_simbolos.ocultar_parametros(nivel);
+      tabla_simbolos.eliminar_variables(nivel);
+      // Elimino los parámetros ocultos al eliminar las acciones
+      tabla_simbolos.eliminar_acciones(nivel);
+      nivel--;
+      //System.out.println("\nTabla despues de borrar nivel " + (nivel + 1));
+      //System.out.println(tabla_simbolos);
+      //System.out.println("######################################################################################");
+    }
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
   }
 }
 
@@ -584,9 +709,16 @@ void bloque_sentencias() :
 void lista_sentencias() :
 {}
 {
-  (
+  try
+  {
+    (
     sentencia()
-  )+
+    ) +
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 /*
@@ -599,114 +731,198 @@ leer()  < tFIN_SENTENCIA >|
 void sentencia() :
 {}
 {
-  leer() < tFIN_SENTENCIA >
-| 
-  escribir() < tFIN_SENTENCIA >
-| 
-  < tIDENTIFICADOR >
-  [
-    asignacion()
-  | invocacion_accion()
-  ]
-  < tFIN_SENTENCIA >
-| 
-  seleccion()
-| 
-  mientras_que()
+  try
+  {
+    leer() < tFIN_SENTENCIA >
+  | 
+    escribir() < tFIN_SENTENCIA >
+  | 
+    < tIDENTIFICADOR >
+    [
+      asignacion()
+    | invocacion_accion()
+    ]
+    < tFIN_SENTENCIA >
+  | 
+    seleccion()
+  | 
+    mientras_que()
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tLEER> <tPARENTESIS_IZQ> lista_asignables() <tPARENTESIS_DCHA>
 void leer() :
 {}
 {
-  < tLEER > < tPARENTESIS_IZQ > lista_asignables() < tPARENTESIS_DCHA >
+  try
+  {
+    < tLEER > < tPARENTESIS_IZQ > lista_asignables() < tPARENTESIS_DCHA >
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tIDENTIFICADOR> (<tCOMA> <tIDENTIFICADOR>)*
 void lista_asignables() :
 {}
 {
-  < tIDENTIFICADOR > (< tCOMA > < tIDENTIFICADOR >)*
+  try
+  {
+    < tIDENTIFICADOR > (< tCOMA > < tIDENTIFICADOR >) *
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tESCRIBIR> <tPARENTESIS_IZQ> lista_escribibles() <tPARENTESIS_DCHA>
 void escribir() :
 {}
 {
-  < tESCRIBIR > < tPARENTESIS_IZQ > lista_escribibles() < tPARENTESIS_DCHA >
+  try
+  {
+    < tESCRIBIR > < tPARENTESIS_IZQ > lista_escribibles() < tPARENTESIS_DCHA >
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // expresion() (<tCOMA> expresion())*
 void lista_escribibles() :
 {}
 {
-  expresion()
-  (
+  try
+  {
+    expresion() 
+    (
     < tCOMA > expresion()
-  )*
+    ) *
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tOPAS> expresion() 
 void asignacion() :
 {}
 {
-  < tOPAS > expresion()
+  try
+  {
+    < tOPAS > expresion()
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // argumentos() 
 void invocacion_accion() :
 {}
 {
-  argumentos()
+  try
+  {
+    argumentos()
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tMQ> expresion() lista_sentencias() <tFMQ>
 void mientras_que() :
 {}
 {
-  < tMQ > expresion() lista_sentencias() < tFMQ >
+  try
+  {
+    < tMQ > expresion() lista_sentencias() < tFMQ >
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tSI> expresion() <tENT> lista_sentencias() (<tSI_NO> lista_sentencias())?  <tFSI>
 void seleccion() :
 {}
 {
-  < tSI > expresion() < tENT > lista_sentencias()
-  (
+  try
+  {
+    < tSI > expresion() < tENT > lista_sentencias() 
+    (
     < tSI_NO > lista_sentencias()
-  )?
-  < tFSI >
+    ) ? 
+    < tFSI >
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tPARENTESIS_IZQ> (lista_expresiones())? <tPARENTESIS_DCHA>
 void argumentos() :
 {}
 {
-  < tPARENTESIS_IZQ >
-  (
+  try
+  {
+    < tPARENTESIS_IZQ > 
+    (
     lista_expresiones()
-  )?
-  < tPARENTESIS_DCHA >
+    ) ? 
+    < tPARENTESIS_DCHA >
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // expresion() (<tCOMA> expresion())*
 void lista_expresiones() :
 {}
 {
-  expresion()
-  (
+  try
+  {
+    expresion() 
+    (
     < tCOMA > expresion()
-  )*
+    ) *
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // expresion_simple() (operador_relacional() expresion_simple())*
 void expresion() :
 {}
 {
-  expresion_simple()
-  (
+  try
+  {
+    expresion_simple() 
+    (
     operador_relacional() expresion_simple()
-  )*
+    ) *
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tMAYOR> | <tMENOR> | <tMAI> | <tMEI> | <tNI> | <tIGUAL>
@@ -725,10 +941,17 @@ void operador_relacional() :
 void expresion_simple() :
 {}
 {
-  termino()
-  (
+  try
+  {
+    termino() 
+    (
     operador_aditivo() termino()
-  )*
+    ) *
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tMAS> | <tMENOS> | <tOR>
@@ -744,10 +967,17 @@ void operador_aditivo() :
 void termino() :
 {}
 {
-  factor()
-  (
+  try
+  {
+    factor() 
+    (
     operador_multiplicativo() factor()
-  )*
+    ) *
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }
 
 // <tPOR> | <tDIV> | <tMOD> | <tAND>
@@ -776,15 +1006,22 @@ void operador_multiplicativo() :
 void factor() :
 {}
 {
-  < tMENOS > factor()
-| < tNOT > factor()
-| < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
-| < tENTACAR > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
-| < tCARAENT > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
-| < tIDENTIFICADOR >
-| < tVALOR_ENTERO >
-| < tVALOR_DECIMAL >
-| < tSTRING >
-| < tTRUE >
-| < tFALSE >
+  try
+  {
+    < tMENOS > factor()
+  | < tNOT > factor()
+  | < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+  | < tENTACAR > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+  | < tCARAENT > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+  | < tIDENTIFICADOR >
+  | < tVALOR_ENTERO >
+  | < tVALOR_DECIMAL >
+  | < tSTRING >
+  | < tTRUE >
+  | < tFALSE >
+  }
+  catch (ParseException e)
+  {
+    error_sintactico(e);
+  }
 }

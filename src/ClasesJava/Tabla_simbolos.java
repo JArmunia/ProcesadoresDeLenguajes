@@ -70,7 +70,7 @@ public class Tabla_simbolos {
      * @return
      * @throws SimboloNoEncontradoException
      */
-    public Simbolo buscar_simbolo(String nombre){
+    public Simbolo buscar_simbolo(String nombre) {
 	int posicion = hashCode(nombre) % size;
 	for (Simbolo simbolo : vector.get(posicion)) {
 	    if (simbolo.getNombre().equals(nombre)) {
@@ -204,7 +204,6 @@ public class Tabla_simbolos {
 	for (ArrayList<Simbolo> lista : vector) {
 	    for (Simbolo simbolo : lista) {
 		if (simbolo.getTipoSimbolo() == Tipo_simbolo.PARAMETRO && simbolo.getNivel() == nivel) {
-
 		    simbolo.setVisible(false);
 		}
 	    }
@@ -236,6 +235,8 @@ public class Tabla_simbolos {
 	    lista.removeIf(simbolo -> simbolo.getTipoSimbolo() == Tipo_simbolo.ACCION && simbolo.getNivel() == nivel);
 	}
 	ocultar_parametros(nivel + 1);
+	// Elimino los parámetros de la acción ya que se pueden acceder desde la lista
+	// de parámetros de la acción
 	eliminar_parametros_ocultos(nivel + 1);
     }
 
@@ -276,7 +277,7 @@ public class Tabla_simbolos {
 	    for (Simbolo simbolo : bloque) {
 		sb.append(simbolo.toString() + " | ");
 	    }
-	    
+
 	}
 	return sb.toString();
     }

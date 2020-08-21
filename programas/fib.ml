@@ -1,13 +1,13 @@
 programa fibbonaci;
 
-entero n, r;
+entero , r ;
 
 
 %-----------------------------------------------------------
 accion cambiar_de_linea ;
 %-----------------------------------------------------------
 Principio
-  escribir (entacar (13), entacar (10));
+  escribir (entacar (13), entacar (10))
 Fin
 
 %-----------------------------------------------------------
@@ -19,7 +19,7 @@ booleano correcto;
   accion pedir_dato ;
   %-----------------------------------------------------------
   Principio
-     escribir ("Escribe un numero: ");
+     escribir ("Escribe un numero: ")
      leer (dato);
   Fin
     
@@ -30,7 +30,7 @@ Principio
      pedir_dato ;
      correcto := dato > 0;
      Si not correcto ent
-        escribir ("El numero debe ser postivo.");
+        escribir ("El numero debe ser postivo.")
 	cambiar_de_linea;
      FSi
   FMq
