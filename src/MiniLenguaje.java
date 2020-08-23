@@ -56,18 +56,41 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     }
   }
 
+  /**
+* Código obtenido de https://stackoverflow.com/questions/29127861/dont-stop-parsing-after-first-exception
+*/
   private static void error_skipto(int kind)
   {
     //ParseException e = generateParseException();
-    //System.out.println(e.toString());
-    Token t = getNextToken();
-    System.out.println(t);
-    while (t.kind != kind)
+    //System.out.println(e.toString());    
+    Token t;
+    do
     {
       t = getNextToken();
       System.out.println(t);
-
     }
+    while (t.kind != kind);
+  }
+
+  private static void error_skipto(int kind1, int kind2)
+  {
+    //ParseException e = generateParseException();
+    //System.out.println(e.toString());    
+    Token t;
+    do
+    {
+      t = getNextToken();
+      System.out.println(t);
+    }
+    while (t.kind != kind1 || t.kind != kind2);
+  }
+
+  private static void error_sintactico(ParseException e)
+  {
+    //error_sintactico(e, "");
+    System.err.println("ERROR SINTACTICO: " + e.getMessage());
+    //Token lastRead = MiniLenguaje.getNextToken();
+    error_skipto(tFIN_SENTENCIA, tFIN);
   }
 
   private static void error_sintactico(ParseException e, String msg)
@@ -79,17 +102,31 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     //"'. " + msg + ">");
   }
 
-  private static void error_sintactico(ParseException e)
-  {
-    //error_sintactico(e, "");
-    System.err.println(e.getMessage());
-    //Token lastRead = MiniLenguaje.getNextToken();
-    error_skipto(tFIN_SENTENCIA);
-  }
-
   private static void error_semantico(Exception e)
   {
-    System.err.println(e.getMessage());
+    System.err.println(e);
+  }
+
+  private static void error_semantico(String e)
+  {
+    System.err.println(new SemanticException(token, e));
+  }
+
+  private static RegistroExpr comprobacionExpresion(RegistroExpr r1, RegistroExpr r2, String operador)
+  {
+    RegistroExpr resultado = new RegistroExpr();
+    if ((r1.tipo != Tipo_variable.DESCONOCIDO) && (r2.tipo != Tipo_variable.DESCONOCIDO) &&
+    (r1.tipo != r2.tipo))
+    {
+      error_semantico("Los operandos deben ser del mismo tipo");
+      resultado = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+    }
+    else if ((r1.tipo != Tipo_variable.DESCONOCIDO) && (r2.tipo != Tipo_variable.DESCONOCIDO) &&
+    (r1.tipo == r2.tipo))
+    {
+      resultado = new RegistroExpr(r1, r2, operador);
+    }
+    return resultado;
   }
 
 /************************************
@@ -98,45 +135,42 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
 // <tPROGRAMA> <tIDENTIFICADOR> <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
   static final public void programa(boolean verbose) throws ParseException {
-    try {
-      tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
-      nivel = 0;
-      jj_consume_token(tPROGRAMA);
-      jj_consume_token(tIDENTIFICADOR);
-      tabla_simbolos.introducir_programa(token.image, TBD);
-      jj_consume_token(tFIN_SENTENCIA);
-      declaracion_variables();
-      declaracion_acciones();
-      bloque_sentencias();
-      tabla_simbolos.eliminar_programa();
-      System.out.println("Fin de programa");
-    } catch (ParseException e) {
-    error_sintactico(e);
-    }
+    tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
+    nivel = 0;
+    jj_consume_token(tPROGRAMA);
+    jj_consume_token(tIDENTIFICADOR);
+    tabla_simbolos.introducir_programa(token.image, TBD);
+    jj_consume_token(tFIN_SENTENCIA);
+    declaracion_variables();
+    declaracion_acciones();
+    bloque_sentencias();
+    tabla_simbolos.eliminar_programa();
+    System.out.println("Fin de programa");
+    jj_consume_token(0);
   }
 
 // (declaracion()<tFIN_SENTENCIA>)*
   static final public void declaracion_variables() throws ParseException {
-    try {
-      label_1:
-      while (true) {
-        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case tENTERO:
-        case tDECIMAL:
-        case tBOOLEANO:
-        case tCARACTER:
-          ;
-          break;
-        default:
-          jj_la1[0] = jj_gen;
-          break label_1;
-        }
+    label_1:
+    while (true) {
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tENTERO:
+      case tDECIMAL:
+      case tBOOLEANO:
+      case tCARACTER:
+        ;
+        break;
+      default:
+        jj_la1[0] = jj_gen;
+        break label_1;
+      }
+      try {
         declaracion();
         jj_consume_token(tFIN_SENTENCIA);
+      } catch (ParseException e) {
+      error_sintactico(e);
+      System.out.println("Entra aqui");
       }
-    } catch (ParseException e) {
-    error_sintactico(e);
-    System.out.println("Entra aqui");
     }
   }
 
@@ -151,7 +185,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       {
         if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, TBD) == null)
         {
-          {if (true) throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));}
+          {if (true) throw new ExcepcionTablaSimbolos(token,nivel, tabla_simbolos.buscar_simbolo(identificador));}
         }
       }
     } catch (ParseException e) {
@@ -218,21 +252,21 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
 // (declaracion_accion())*
   static final public void declaracion_acciones() throws ParseException {
-    try {
-      label_3:
-      while (true) {
-        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case tACCION:
-          ;
-          break;
-        default:
-          jj_la1[3] = jj_gen;
-          break label_3;
-        }
-        declaracion_accion();
+    label_3:
+    while (true) {
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tACCION:
+        ;
+        break;
+      default:
+        jj_la1[3] = jj_gen;
+        break label_3;
       }
-    } catch (ParseException e) {
-    error_sintactico(e);
+      try {
+        declaracion_accion();
+      } catch (ParseException e) {
+      error_sintactico(e);
+      }
     }
   }
 
@@ -259,18 +293,18 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       accion = tabla_simbolos.introducir_accion(token.image, nivel, TBD);
       if (accion == null)
       {
-        {if (true) throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(token.image));}
+        error_semantico(new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(token.image)));
       }
       nivel++;
+      System.out.println("Aumenta nivel");
       parametros = parametros_formales();
       for (Simbolo parametro : parametros)
       {
         accion.introducir_parametro(parametro);
       }
     } catch (ParseException e) {
+    System.out.println("Excepcion sintactica");
     error_sintactico(e);
-    } catch (ExcepcionTablaSimbolos e) {
-    error_semantico(e);
     }
   }
 
@@ -324,7 +358,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, TBD);
         if (parametro == null)
         {
-          {if (true) throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));}
+          {if (true) throw new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(identificador));}
         }
         else
         {
@@ -402,25 +436,25 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
 // (sentencia())* 
   static final public void lista_sentencias() throws ParseException {
-    try {
-      label_5:
-      while (true) {
+    label_5:
+    while (true) {
+      try {
         sentencia();
-        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case tSI:
-        case tMQ:
-        case tESCRIBIR:
-        case tLEER:
-        case tIDENTIFICADOR:
-          ;
-          break;
-        default:
-          jj_la1[7] = jj_gen;
-          break label_5;
-        }
+      } catch (ParseException e) {
+      error_sintactico(e);
       }
-    } catch (ParseException e) {
-    error_sintactico(e);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tSI:
+      case tMQ:
+      case tESCRIBIR:
+      case tLEER:
+      case tIDENTIFICADOR:
+        ;
+        break;
+      default:
+        jj_la1[7] = jj_gen;
+        break label_5;
+      }
     }
   }
 
@@ -654,65 +688,96 @@ leer()  < tFIN_SENTENCIA >|
   }
 
 // expresion_simple() (operador_relacional() expresion_simple())*
-  static final public void expresion() throws ParseException {
+  static final public RegistroExpr expresion() throws ParseException {
+  RegistroExpr r1, r2, resultado = new RegistroExpr();
+  Token token_operador;
+  String operador;
     try {
-      expresion_simple();
-      label_9:
-      while (true) {
-        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case tIGUAL:
-        case tMAI:
-        case tMEI:
-        case tNI:
-        case tMAYOR:
-        case tMENOR:
-          ;
-          break;
-        default:
-          jj_la1[16] = jj_gen;
-          break label_9;
-        }
-        operador_relacional();
-        expresion_simple();
+      r1 = expresion_simple();
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tIGUAL:
+      case tMAI:
+      case tMEI:
+      case tNI:
+      case tMAYOR:
+      case tMENOR:
+        token_operador = operador_relacional();
+        r2 = expresion_simple();
+      operador = token_operador.image;
+      resultado = comprobacionExpresion(r1, r2, operador);
+      /*switch (operador)
+      {
+        case "=" :         
+        break;
+        case "<>" :        
+        break;
+        case "<" : 
+        break;
+        case "<=" : 
+        break;
+        case ">" : 
+        break;
+        case ">=" : 
+        break;
+      }*/
+
+        break;
+      default:
+        jj_la1[16] = jj_gen;
+        ;
       }
+      {if (true) return resultado;}
     } catch (ParseException e) {
     error_sintactico(e);
     }
+    throw new Error("Missing return statement in function");
   }
 
 // <tMAYOR> | <tMENOR> | <tMAI> | <tMEI> | <tNI> | <tIGUAL>
-  static final public void operador_relacional() throws ParseException {
+  static final public Token operador_relacional() throws ParseException {
+  Token t;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case tMAYOR:
-      jj_consume_token(tMAYOR);
+      t = jj_consume_token(tMAYOR);
+    {if (true) return t;}
       break;
     case tMENOR:
-      jj_consume_token(tMENOR);
+      t = jj_consume_token(tMENOR);
+    {if (true) return t;}
       break;
     case tMAI:
-      jj_consume_token(tMAI);
+      t = jj_consume_token(tMAI);
+    {if (true) return t;}
       break;
     case tMEI:
-      jj_consume_token(tMEI);
+      t = jj_consume_token(tMEI);
+    {if (true) return t;}
       break;
     case tNI:
-      jj_consume_token(tNI);
+      t = jj_consume_token(tNI);
+    {if (true) return t;}
       break;
     case tIGUAL:
-      jj_consume_token(tIGUAL);
+      t = jj_consume_token(tIGUAL);
+    {if (true) return t;}
       break;
     default:
       jj_la1[17] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
+    throw new Error("Missing return statement in function");
   }
 
 // termino() (operador_aditivo() termino())*
-  static final public void expresion_simple() throws ParseException {
+  static final public RegistroExpr expresion_simple() throws ParseException {
+  RegistroExpr r1 = new RegistroExpr();
+  RegistroExpr r2 = new RegistroExpr();
+  Token token_operador;
+  String operador;
     try {
-      termino();
-      label_10:
+      r1 = termino();
+      label_9:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case tOR:
@@ -722,40 +787,101 @@ leer()  < tFIN_SENTENCIA >|
           break;
         default:
           jj_la1[18] = jj_gen;
-          break label_10;
+          break label_9;
         }
-        operador_aditivo();
-        termino();
+        token_operador = operador_aditivo();
+        r2 = termino();
+      operador = token_operador.image;
+      switch (operador)
+      {
+        case "+" :
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          r1 = new RegistroExpr(r1, r2, operador);
+          if (r1.valorEnt != null && (r1.valorEnt >= (2^ 16) || r1.valorEnt < (- (2^ 16))))
+          {
+            error_semantico("Error de overflow/underflow al realizar la suma.");
+            r1.valorEnt = null;
+          }
+        }
+        break;
+        case "-" :
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          r1 = new RegistroExpr(r1, r2, operador);
+          if (r1.valorEnt != null && (r1.valorEnt >= (2^ 16) || r1.valorEnt < (- (2^ 16))))
+          {
+            error_semantico("Error de overflow/underflow al realizar la resta.");
+            r1.valorEnt = null;
+          }
+        }
+        break;
+        case "or" :
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba booleano.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          r1 = new RegistroExpr(r1, r2, operador);
+        }
+        break;
       }
+      }
+      {if (true) return r1;}
     } catch (ParseException e) {
     error_sintactico(e);
+    {if (true) return r1;}
     }
+    throw new Error("Missing return statement in function");
   }
 
 // <tMAS> | <tMENOS> | <tOR>
-  static final public void operador_aditivo() throws ParseException {
+  static final public Token operador_aditivo() throws ParseException {
+  Token t;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case tMAS:
-      jj_consume_token(tMAS);
+      t = jj_consume_token(tMAS);
+    {if (true) return t;}
       break;
     case tMENOS:
-      jj_consume_token(tMENOS);
+      t = jj_consume_token(tMENOS);
+    {if (true) return t;}
       break;
     case tOR:
-      jj_consume_token(tOR);
+      t = jj_consume_token(tOR);
+    {if (true) return t;}
       break;
     default:
       jj_la1[19] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
+    throw new Error("Missing return statement in function");
   }
 
 // factor() (operador_multiplicativo() factor())* 
-  static final public void termino() throws ParseException {
+  static final public RegistroExpr termino() throws ParseException {
+  RegistroExpr r1 = new RegistroExpr(), r2 = new RegistroExpr();
+  Token token_operador;
+  String operador;
     try {
-      factor();
-      label_11:
+      r1 = factor();
+      label_10:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case tAND:
@@ -766,36 +892,138 @@ leer()  < tFIN_SENTENCIA >|
           break;
         default:
           jj_la1[20] = jj_gen;
-          break label_11;
+          break label_10;
         }
-        operador_multiplicativo();
-        factor();
+        token_operador = operador_multiplicativo();
+        r2 = factor();
+      operador = token_operador.image;
+      switch (operador)
+      {
+        case "*" :
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          r1 = new RegistroExpr(r1, r2, operador);
+          if (r1.valorEnt != null && (r1.valorEnt >= (2^ 16) || r1.valorEnt < (- (2^ 16))))
+          {
+            error_semantico("Error de overflow/underflow al realizar la multiplicacion.");
+            r1.valorEnt = null;
+          }
+        }
+        break;
+        case "div" :
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          if (r2.valorEnt != null && r2.valorEnt == 0)
+          {
+            error_semantico("Division por 0");
+            r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+          }
+          else
+          {
+            r1 = new RegistroExpr(r1, r2, operador);
+          }
+        }
+        break;
+        case "/" :
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          if (r2.valorEnt != null && r2.valorEnt == 0)
+          {
+            error_semantico("Division por 0");
+            r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+          }
+          else
+          {
+            r1 = new RegistroExpr(r1, r2, operador);
+          }
+        }
+        break;
+        case "mod" :
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          if (r2.valorEnt != null && r2.valorEnt == 0)
+          {
+            error_semantico("Modulo por 0");
+            r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+          }
+          else
+          {
+            r1 = new RegistroExpr(r1, r2, operador);
+          }
+        }
+        break;
+        case "and" :
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba booleano.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          r1 = new RegistroExpr(r1, r2, operador);
+        }
+        break;
       }
+      }
+      {if (true) return r1;}
     } catch (ParseException e) {
     error_sintactico(e);
+    {if (true) return r1;}
     }
+    throw new Error("Missing return statement in function");
   }
 
 // <tPOR> | <tDIV> | <tMOD> | <tAND>
-  static final public void operador_multiplicativo() throws ParseException {
+  static final public Token operador_multiplicativo() throws ParseException {
+  Token t;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case tPOR:
-      jj_consume_token(tPOR);
+      t = jj_consume_token(tPOR);
+    {if (true) return t;}
       break;
     case tDIV:
-      jj_consume_token(tDIV);
+      t = jj_consume_token(tDIV);
+    {if (true) return t;}
       break;
     case tMOD:
-      jj_consume_token(tMOD);
+      t = jj_consume_token(tMOD);
+    {if (true) return t;}
       break;
     case tAND:
-      jj_consume_token(tAND);
+      t = jj_consume_token(tAND);
+    {if (true) return t;}
       break;
     default:
       jj_la1[21] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
+    throw new Error("Missing return statement in function");
   }
 
 /*
@@ -811,51 +1039,125 @@ leer()  < tFIN_SENTENCIA >|
 | < tTRUE >
 | < tFALSE >
 */
-  static final public void factor() throws ParseException {
+  static final public RegistroExpr factor() throws ParseException {
+  RegistroExpr rExpr = new RegistroExpr();
+  Token t;
+  Simbolo s;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case tMENOS:
         jj_consume_token(tMENOS);
-        factor();
+        rExpr = factor();
+      if ((rExpr.tipo != Tipo_variable.ENTERO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
+      {
+        error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.ENTERO));
+        rExpr.tipo = Tipo_variable.ENTERO;
+      }
+      if (rExpr.valorEnt != null)
+      {
+        rExpr.valorEnt = - rExpr.valorEnt;
+      }
+      {if (true) return rExpr;}
         break;
       case tNOT:
         jj_consume_token(tNOT);
-        factor();
+        rExpr = factor();
+      if ((rExpr.tipo != Tipo_variable.BOOLEANO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
+      {
+        error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.BOOLEANO));
+        rExpr.tipo = Tipo_variable.BOOLEANO;
+      }
+      if (rExpr.valorBool != null)
+      {
+        rExpr.valorBool = !rExpr.valorBool;
+      }
+      {if (true) return rExpr;}
         break;
       case tPARENTESIS_IZQ:
         jj_consume_token(tPARENTESIS_IZQ);
-        expresion();
+        rExpr = expresion();
         jj_consume_token(tPARENTESIS_DCHA);
+      {if (true) return rExpr;}
         break;
       case tENTACAR:
         jj_consume_token(tENTACAR);
         jj_consume_token(tPARENTESIS_IZQ);
-        expresion();
+        rExpr = expresion();
         jj_consume_token(tPARENTESIS_DCHA);
+      if ((rExpr.tipo != Tipo_variable.ENTERO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
+      {
+        error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.ENTERO));
+        System.out.println(rExpr);
+      }
+      if ((rExpr.valorEnt != null) && (rExpr.valorEnt > 255))
+      {
+        error_semantico("La expresion no se puede convertir en un caracter valido");
+      }
+      rExpr.tipo = Tipo_variable.CHAR;
+      {if (true) return rExpr;}
         break;
       case tCARAENT:
         jj_consume_token(tCARAENT);
         jj_consume_token(tPARENTESIS_IZQ);
-        expresion();
+        rExpr = expresion();
         jj_consume_token(tPARENTESIS_DCHA);
+      if ((rExpr.tipo != Tipo_variable.CHAR) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
+      {
+        error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.CHAR));
+      }
+      rExpr.tipo = Tipo_variable.ENTERO;
+      {if (true) return rExpr;}
         break;
       case tIDENTIFICADOR:
-        jj_consume_token(tIDENTIFICADOR);
+        t = jj_consume_token(tIDENTIFICADOR);
+      s = tabla_simbolos.buscar_simbolo(t.image);
+      rExpr = new RegistroExpr();
+      if (s == null)
+      {
+        error_semantico("Identificador desconocido");
+        tabla_simbolos.introducir_variable(token.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
+        rExpr.tipo = Tipo_variable.DESCONOCIDO;
+      }
+      else
+      {
+        rExpr.tipo = s.getVariable();
+      }
+      {if (true) return rExpr;}
         break;
       case tVALOR_ENTERO:
-        jj_consume_token(tVALOR_ENTERO);
+        t = jj_consume_token(tVALOR_ENTERO);
+      rExpr = new RegistroExpr();
+      rExpr.valorEnt = Integer.parseInt(t.image);
+      rExpr.tipo = Tipo_variable.ENTERO;
+      {if (true) return rExpr;}
         break;
       case tVALOR_DECIMAL:
-        jj_consume_token(tVALOR_DECIMAL);
+        t = jj_consume_token(tVALOR_DECIMAL);
+      rExpr = new RegistroExpr();
+      rExpr.valorDecimal = Float.parseFloat(t.image);
+      rExpr.tipo = Tipo_variable.DECIMAL;
+      {if (true) return rExpr;}
         break;
       case tSTRING:
-        jj_consume_token(tSTRING);
+        t = jj_consume_token(tSTRING);
+      rExpr = new RegistroExpr();
+      rExpr.valorChar = t.image;
+      rExpr.tipo = Tipo_variable.CHAR;
+      {if (true) return rExpr;}
         break;
       case tTRUE:
-        jj_consume_token(tTRUE);
+        t = jj_consume_token(tTRUE);
+      rExpr = new RegistroExpr();
+      rExpr.valorBool = true;
+      rExpr.tipo = Tipo_variable.BOOLEANO;
+      {if (true) return rExpr;}
         break;
       case tFALSE:
-        jj_consume_token(tFALSE);
+        t = jj_consume_token(tFALSE);
+      rExpr = new RegistroExpr();
+      rExpr.valorBool = false;
+      rExpr.tipo = Tipo_variable.BOOLEANO;
+      {if (true) return rExpr;}
         break;
       default:
         jj_la1[22] = jj_gen;
@@ -864,7 +1166,9 @@ leer()  < tFIN_SENTENCIA >|
       }
     } catch (ParseException e) {
     error_sintactico(e);
+    {if (true) return rExpr;}
     }
+    throw new Error("Missing return statement in function");
   }
 
   static private boolean jj_initialized_once = false;

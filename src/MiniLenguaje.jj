@@ -69,18 +69,41 @@ public class MiniLenguaje
     }
   }
 
+  /**
+* Código obtenido de https://stackoverflow.com/questions/29127861/dont-stop-parsing-after-first-exception
+*/
   private static void error_skipto(int kind)
   {
     //ParseException e = generateParseException();
-    //System.out.println(e.toString());
-    Token t = getNextToken();
-    System.out.println(t);
-    while (t.kind != kind)
+    //System.out.println(e.toString());    
+    Token t;
+    do
     {
       t = getNextToken();
       System.out.println(t);
-      
     }
+    while (t.kind != kind);
+  }
+
+  private static void error_skipto(int kind1, int kind2)
+  {
+    //ParseException e = generateParseException();
+    //System.out.println(e.toString());    
+    Token t;
+    do
+    {
+      t = getNextToken();
+      System.out.println(t);
+    }
+    while (t.kind != kind1 || t.kind != kind2);
+  }
+
+  private static void error_sintactico(ParseException e)
+  {
+    //error_sintactico(e, "");
+    System.err.println("ERROR SINTACTICO: " + e.getMessage());
+    //Token lastRead = MiniLenguaje.getNextToken();
+    error_skipto(tFIN_SENTENCIA, tFIN);
   }
 
   private static void error_sintactico(ParseException e, String msg)
@@ -92,17 +115,31 @@ public class MiniLenguaje
     //"'. " + msg + ">");
   }
 
-  private static void error_sintactico(ParseException e)
-  {
-    //error_sintactico(e, "");
-    System.err.println(e.getMessage());
-    //Token lastRead = MiniLenguaje.getNextToken();
-    error_skipto(tFIN_SENTENCIA);
-  }
-
   private static void error_semantico(Exception e)
   {
-    System.err.println(e.getMessage());
+    System.err.println(e);
+  }
+
+  private static void error_semantico(String e)
+  {
+    System.err.println(new SemanticException(token, e));
+  }
+
+  private static RegistroExpr comprobacionExpresion(RegistroExpr r1, RegistroExpr r2, String operador)
+  {
+    RegistroExpr resultado = new RegistroExpr();
+    if ((r1.tipo != Tipo_variable.DESCONOCIDO) && (r2.tipo != Tipo_variable.DESCONOCIDO) && 
+    (r1.tipo != r2.tipo))
+    {
+      error_semantico("Los operandos deben ser del mismo tipo");
+      resultado = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+    }
+    else if ((r1.tipo != Tipo_variable.DESCONOCIDO) && (r2.tipo != Tipo_variable.DESCONOCIDO) && 
+    (r1.tipo == r2.tipo))
+    {
+      resultado = new RegistroExpr(r1, r2, operador);
+    }
+    return resultado;
   }
 }
 
@@ -377,46 +414,40 @@ TOKEN : /* VALORES */
 void programa(boolean verbose) :
 {}
 {
-  try
   {
-    {
-      tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
-      nivel = 0;
-    }
-    < tPROGRAMA > < tIDENTIFICADOR >
-    {
-      tabla_simbolos.introducir_programa(token.image, TBD);
-    }
-    < tFIN_SENTENCIA > 
-    declaracion_variables() 
-    declaracion_acciones() 
-    bloque_sentencias()
-    {
-      tabla_simbolos.eliminar_programa();
-      System.out.println("Fin de programa");
-    }
+    tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
+    nivel = 0;
   }
-  catch (ParseException e)
+  < tPROGRAMA > < tIDENTIFICADOR >
   {
-    error_sintactico(e);
+    tabla_simbolos.introducir_programa(token.image, TBD);
   }
+  < tFIN_SENTENCIA > 
+  declaracion_variables() 
+  declaracion_acciones() 
+  bloque_sentencias()
+  {
+    tabla_simbolos.eliminar_programa();
+    System.out.println("Fin de programa");
+  }
+  < EOF >
 }
 
 // (declaracion()<tFIN_SENTENCIA>)*
 void declaracion_variables() :
 {}
 {
-  try
-  {
-    (
-    declaracion() < tFIN_SENTENCIA >
-    ) *
-  }
-  catch (ParseException e)
-  {
-    error_sintactico(e);
-    System.out.println("Entra aqui");
-  }
+  (
+    try
+    {
+      declaracion() < tFIN_SENTENCIA >
+    }
+    catch (ParseException e)
+    {
+      error_sintactico(e);
+      System.out.println("Entra aqui");
+    }
+  )*
 }
 
 // tipo_variables() identificadores()
@@ -435,7 +466,7 @@ void declaracion() :
       {
         if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, TBD) == null)
         {
-          throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));
+          throw new ExcepcionTablaSimbolos(token,nivel, tabla_simbolos.buscar_simbolo(identificador));
         }
       }
     }
@@ -505,16 +536,16 @@ ArrayList < String > identificadores() :
 void declaracion_acciones() :
 {}
 {
-  try
-  {
-    (
-    declaracion_accion()
-    ) *
-  }
-  catch (ParseException e)
-  {
-    error_sintactico(e);
-  }
+  (
+    try
+    {
+      declaracion_accion()
+    }
+    catch (ParseException e)
+    {
+      error_sintactico(e);
+    }
+  )*
 }
 
 // cabecera_accion() <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
@@ -547,9 +578,10 @@ void cabecera_accion() :
       accion = tabla_simbolos.introducir_accion(token.image, nivel, TBD);
       if (accion == null)
       {
-        throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(token.image));
+        error_semantico(new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(token.image)));
       }
       nivel++;
+      System.out.println("Aumenta nivel");
     }
     parametros = parametros_formales()
     {
@@ -561,12 +593,10 @@ void cabecera_accion() :
   }
   catch (ParseException e)
   {
+    System.out.println("Excepcion sintactica");
     error_sintactico(e);
   }
-  catch (ExcepcionTablaSimbolos e)
-  {
-    error_semantico(e);
-  }
+  
 }
 
 // ((<tPARENTESIS_IZQ> parametros()) (<tFIN_SENTENCIA> parametros())* <tPARENTESIS_DCHA>)? 
@@ -619,7 +649,7 @@ ArrayList < Simbolo > lista_parametros(Clase_parametro clase, Tipo_variable tipo
         parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, TBD);
         if (parametro == null)
         {
-          throw new ExcepcionTablaSimbolos(token, tabla_simbolos.buscar_simbolo(identificador));
+          throw new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(identificador));
         }
         else
         {
@@ -709,16 +739,16 @@ void bloque_sentencias() :
 void lista_sentencias() :
 {}
 {
-  try
-  {
-    (
-    sentencia()
-    ) +
-  }
-  catch (ParseException e)
-  {
-    error_sintactico(e);
-  }
+  (
+    try
+    {
+      sentencia()
+    }
+    catch (ParseException e)
+    {
+      error_sintactico(e);
+    }
+  )+
 }
 
 /*
@@ -909,15 +939,43 @@ void lista_expresiones() :
 }
 
 // expresion_simple() (operador_relacional() expresion_simple())*
-void expresion() :
-{}
+RegistroExpr expresion() :
+{
+  RegistroExpr r1, r2, resultado = new RegistroExpr();
+  Token token_operador;
+  String operador;
+}
 {
   try
   {
-    expresion_simple() 
+    r1 = expresion_simple() 
     (
-    operador_relacional() expresion_simple()
-    ) *
+    token_operador = operador_relacional() 
+    r2 = expresion_simple()
+    {
+      operador = token_operador.image;
+      resultado = comprobacionExpresion(r1, r2, operador);
+      /*switch (operador)
+      {
+        case "=" :         
+        break;
+        case "<>" :        
+        break;
+        case "<" : 
+        break;
+        case "<=" : 
+        break;
+        case ">" : 
+        break;
+        case ">=" : 
+        break;
+      }*/
+
+    }
+    ) ?
+    {
+      return resultado;
+    }
   }
   catch (ParseException e)
   {
@@ -926,68 +984,279 @@ void expresion() :
 }
 
 // <tMAYOR> | <tMENOR> | <tMAI> | <tMEI> | <tNI> | <tIGUAL>
-void operador_relacional() :
-{}
+Token operador_relacional() :
 {
-  < tMAYOR >
-| < tMENOR >
-| < tMAI >
-| < tMEI >
-| < tNI >
-| < tIGUAL >
+  Token t;
+}
+{
+  t = < tMAYOR >
+  {
+    return t;
+  }
+| t = < tMENOR >
+  {
+    return t;
+  }
+| t = < tMAI >
+  {
+    return t;
+  }
+| t = < tMEI >
+  {
+    return t;
+  }
+| t = < tNI >
+  {
+    return t;
+  }
+| t = < tIGUAL >
+  {
+    return t;
+  }
 }
 
 // termino() (operador_aditivo() termino())*
-void expresion_simple() :
-{}
+RegistroExpr expresion_simple() :
+{
+  RegistroExpr r1 = new RegistroExpr();
+  RegistroExpr r2 = new RegistroExpr();
+  Token token_operador;
+  String operador;
+}
 {
   try
   {
-    termino() 
+    r1 = termino() 
     (
-    operador_aditivo() termino()
+    token_operador = operador_aditivo() 
+    r2 = termino()
+    {
+      operador = token_operador.image;
+      switch (operador)
+      {
+        case "+" : 
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO) 
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          r1 = new RegistroExpr(r1, r2, operador);
+          if (r1.valorEnt != null && (r1.valorEnt >= (2^ 16) || r1.valorEnt < (- (2^ 16))))
+          {
+            error_semantico("Error de overflow/underflow al realizar la suma.");
+            r1.valorEnt = null;
+          }
+        }
+        break;
+        case "-" : 
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO) 
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          r1 = new RegistroExpr(r1, r2, operador);
+          if (r1.valorEnt != null && (r1.valorEnt >= (2^ 16) || r1.valorEnt < (- (2^ 16))))
+          {
+            error_semantico("Error de overflow/underflow al realizar la resta.");
+            r1.valorEnt = null;
+          }
+        }
+        break;
+        case "or" : 
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO) 
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba booleano.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          r1 = new RegistroExpr(r1, r2, operador);				
+        }			
+        break;
+      }
+    }
     ) *
+    {
+      return r1;
+    }
   }
   catch (ParseException e)
   {
     error_sintactico(e);
+    return r1;
   }
 }
 
 // <tMAS> | <tMENOS> | <tOR>
-void operador_aditivo() :
-{}
+Token operador_aditivo() :
 {
-  < tMAS >
-| < tMENOS >
-| < tOR >
+  Token t;
+}
+{
+  t = < tMAS >
+  {
+    return t;
+  }
+| t = < tMENOS >
+  {
+    return t;
+  }
+| t = < tOR >
+  {
+    return t;
+  }
 }
 
 // factor() (operador_multiplicativo() factor())* 
-void termino() :
-{}
+RegistroExpr termino() :
+{
+  RegistroExpr r1 = new RegistroExpr(), r2 = new RegistroExpr();
+  Token token_operador;
+  String operador;
+}
 {
   try
   {
-    factor() 
+    r1 = factor() 
     (
-    operador_multiplicativo() factor()
+    token_operador = operador_multiplicativo() 
+    r2 = factor()
+    {
+      operador = token_operador.image;
+      switch (operador)
+      {
+        case "*" : 
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO) 
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          r1 = new RegistroExpr(r1, r2, operador);
+          if (r1.valorEnt != null && (r1.valorEnt >= (2^ 16) || r1.valorEnt < (- (2^ 16))))
+          {
+            error_semantico("Error de overflow/underflow al realizar la multiplicacion.");
+            r1.valorEnt = null;
+          }
+        }
+        break;
+        case "div" : 
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO) 
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          if (r2.valorEnt != null && r2.valorEnt == 0)
+          {
+            error_semantico("Division por 0");
+            r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+          }
+          else
+          {
+            r1 = new RegistroExpr(r1, r2, operador);
+          }				
+        }
+        break;
+        case "/" : 
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO) 
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          if (r2.valorEnt != null && r2.valorEnt == 0)
+          {
+            error_semantico("Division por 0");
+            r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+          }
+          else
+          {
+            r1 = new RegistroExpr(r1, r2, operador);
+          }				
+        }
+        break;
+        case "mod" : 
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO) 
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba entero.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {
+          if (r2.valorEnt != null && r2.valorEnt == 0)
+          {
+            error_semantico("Modulo por 0");
+            r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+          }
+          else
+          {
+            r1 = new RegistroExpr(r1, r2, operador);
+          }				
+        }
+        break;
+        case "and" : 
+        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO) 
+        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        {
+          error_semantico("Tipo incompatible. Se esperaba booleano.");
+          r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
+        }
+        else
+        {				
+          r1 = new RegistroExpr(r1, r2, operador);						
+        }
+        break;			
+      }
+    }
     ) *
+    {
+      return r1;
+    }
   }
   catch (ParseException e)
   {
     error_sintactico(e);
+    return r1;
   }
 }
 
 // <tPOR> | <tDIV> | <tMOD> | <tAND>
-void operador_multiplicativo() :
-{}
+Token operador_multiplicativo() :
 {
-  < tPOR >
-| < tDIV >
-| < tMOD >
-| < tAND >
+  Token t;
+}
+{
+  t = < tPOR >
+  {
+    return t;
+  }
+| t = < tDIV >
+  {
+    return t;
+  }
+| t = < tMOD >
+  {
+    return t;
+  }
+| t = < tAND >
+  {
+    return t;
+  }
 }
 
 /*
@@ -1003,25 +1272,123 @@ void operador_multiplicativo() :
 | < tTRUE >
 | < tFALSE >
 */
-void factor() :
-{}
+RegistroExpr factor() :
+{
+  RegistroExpr rExpr = new RegistroExpr();
+  Token t;
+  Simbolo s;
+}
 {
   try
   {
-    < tMENOS > factor()
-  | < tNOT > factor()
-  | < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
-  | < tENTACAR > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
-  | < tCARAENT > < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
-  | < tIDENTIFICADOR >
-  | < tVALOR_ENTERO >
-  | < tVALOR_DECIMAL >
-  | < tSTRING >
-  | < tTRUE >
-  | < tFALSE >
+    < tMENOS > rExpr = factor()
+    {
+      if ((rExpr.tipo != Tipo_variable.ENTERO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
+      {
+        error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.ENTERO));
+        rExpr.tipo = Tipo_variable.ENTERO;
+      }
+      if (rExpr.valorEnt != null)
+      {
+        rExpr.valorEnt = - rExpr.valorEnt;
+      }
+      return rExpr;
+    }
+  | < tNOT > rExpr = factor()
+    {
+      if ((rExpr.tipo != Tipo_variable.BOOLEANO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
+      {
+        error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.BOOLEANO));
+        rExpr.tipo = Tipo_variable.BOOLEANO;
+      }
+      if (rExpr.valorBool != null)
+      {
+        rExpr.valorBool = !rExpr.valorBool;
+      }
+      return rExpr;
+    }
+  | < tPARENTESIS_IZQ > rExpr = expresion() < tPARENTESIS_DCHA >
+    {
+      return rExpr;
+    }
+  | < tENTACAR > < tPARENTESIS_IZQ > rExpr = expresion() < tPARENTESIS_DCHA >
+    {
+      if ((rExpr.tipo != Tipo_variable.ENTERO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
+      {
+        error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.ENTERO));
+        System.out.println(rExpr);
+      }
+      if ((rExpr.valorEnt != null) && (rExpr.valorEnt > 255))
+      {
+        error_semantico("La expresion no se puede convertir en un caracter valido");
+      }
+      rExpr.tipo = Tipo_variable.CHAR;
+      return rExpr;
+    }
+  | < tCARAENT > < tPARENTESIS_IZQ > rExpr = expresion() < tPARENTESIS_DCHA >
+    {
+      if ((rExpr.tipo != Tipo_variable.CHAR) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
+      {
+        error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.CHAR));
+      }
+      rExpr.tipo = Tipo_variable.ENTERO;
+      return rExpr;
+    }
+  | t = < tIDENTIFICADOR >
+    {
+      s = tabla_simbolos.buscar_simbolo(t.image);
+      rExpr = new RegistroExpr();
+      if (s == null)
+      {
+        error_semantico("Identificador desconocido");
+        tabla_simbolos.introducir_variable(token.image, Tipo_variable.DESCONOCIDO, nivel, TBD);	
+        rExpr.tipo = Tipo_variable.DESCONOCIDO;
+      }
+      else
+      {
+        rExpr.tipo = s.getVariable();
+      }
+      return rExpr;	
+    }
+  | t = < tVALOR_ENTERO >
+    {
+      rExpr = new RegistroExpr();
+      rExpr.valorEnt = Integer.parseInt(t.image);
+      rExpr.tipo = Tipo_variable.ENTERO;
+      return rExpr;
+    }
+  | t = < tVALOR_DECIMAL >
+    {
+      rExpr = new RegistroExpr();
+      rExpr.valorDecimal = Float.parseFloat(t.image);
+      rExpr.tipo = Tipo_variable.DECIMAL;
+      return rExpr;
+    }
+  | t = < tSTRING >
+    {
+      rExpr = new RegistroExpr();
+      rExpr.valorChar = t.image;
+      rExpr.tipo = Tipo_variable.CHAR;
+      return rExpr;
+    }
+  | t = < tTRUE >
+    {
+      rExpr = new RegistroExpr();
+      rExpr.valorBool = true;
+      rExpr.tipo = Tipo_variable.BOOLEANO;
+      return rExpr;
+    }
+  | t = < tFALSE >
+    {
+      rExpr = new RegistroExpr();
+      rExpr.valorBool = false;
+      rExpr.tipo = Tipo_variable.BOOLEANO;
+      return rExpr;
+    }
   }
   catch (ParseException e)
   {
     error_sintactico(e);
+    return rExpr;
   }
 }

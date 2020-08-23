@@ -63,8 +63,7 @@ public class Tabla_simbolos {
     /**
      * Busca en la tabla el símbolo de mayor nivel cuyo nombre coincida con el del
      * parámetro (se distinguen minúsculas y mayúsculas). Si existe, devuelve un
-     * puntero como resultado, de lo contrario lanza una excepcion
-     * SimboloNoEncontradoException.
+     * puntero como resultado, de lo contrario devuelve null.
      * 
      * @param nombre
      * @return
