@@ -169,6 +169,14 @@ public class Simbolo {
     public boolean esParametro() {
 	return this.tipo.equals(Tipo_simbolo.PARAMETRO);
     }
+    
+    public boolean esValor() {
+	return this.parametro.equals(Clase_parametro.VAL);
+    }
+    
+    public boolean esReferencia() {
+	return this.parametro.equals(Clase_parametro.REF);
+    }
 
     public boolean esRef() {
 	return this.parametro.equals(Clase_parametro.REF);

@@ -5,6 +5,7 @@ public class RegistroExpr {
     public Boolean valorBool = null;
     public String valorChar = null;
     public Float valorDecimal = null;
+    public Clase_parametro parametro = Clase_parametro.VAL;
 
     public Tipo_variable tipo;
 

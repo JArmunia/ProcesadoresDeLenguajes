@@ -63,13 +63,11 @@ public class MiniLenguaje implements MiniLenguajeConstants {
   {
     //ParseException e = generateParseException();
     //System.out.println(e.toString());    
-    Token t;
-    do
+    Token t = token;
+    while (t.kind != kind && t.kind != EOF)
     {
       t = getNextToken();
-      System.out.println(t);
     }
-    while (t.kind != kind);
   }
 
   private static void error_skipto(int kind1, int kind2)
@@ -80,9 +78,8 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     do
     {
       t = getNextToken();
-      System.out.println(t);
     }
-    while (t.kind != kind1 || t.kind != kind2);
+    while (t.kind != kind1 && t.kind != kind2 && t.kind != EOF);
   }
 
   private static void error_sintactico(ParseException e)
@@ -142,7 +139,9 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     tabla_simbolos.introducir_programa(token.image, TBD);
     jj_consume_token(tFIN_SENTENCIA);
     declaracion_variables();
+    System.out.println("Fin de declaracion de variables");
     declaracion_acciones();
+    System.out.println("Fin de declaracion de acciones");
     bloque_sentencias();
     tabla_simbolos.eliminar_programa();
     System.out.println("Fin de programa");
@@ -169,7 +168,6 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         jj_consume_token(tFIN_SENTENCIA);
       } catch (ParseException e) {
       error_sintactico(e);
-      System.out.println("Entra aqui");
       }
     }
   }
@@ -185,13 +183,11 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       {
         if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, TBD) == null)
         {
-          {if (true) throw new ExcepcionTablaSimbolos(token,nivel, tabla_simbolos.buscar_simbolo(identificador));}
+          error_semantico(new ExcepcionTablaSimbolos(identificador, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador)));
         }
       }
     } catch (ParseException e) {
     error_sintactico(e);
-    } catch (ExcepcionTablaSimbolos e) {
-    error_semantico(e);
     }
   }
 
@@ -296,14 +292,12 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         error_semantico(new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(token.image)));
       }
       nivel++;
-      System.out.println("Aumenta nivel");
       parametros = parametros_formales();
       for (Simbolo parametro : parametros)
       {
         accion.introducir_parametro(parametro);
       }
     } catch (ParseException e) {
-    System.out.println("Excepcion sintactica");
     error_sintactico(e);
     }
   }
@@ -358,7 +352,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, TBD);
         if (parametro == null)
         {
-          {if (true) throw new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(identificador));}
+          error_semantico(new ExcepcionTablaSimbolos(identificador, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador)));
         }
         else
         {
@@ -369,8 +363,6 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     } catch (ParseException e) {
     error_sintactico(e);
     {if (true) return parametros;}
-    } catch (ExcepcionTablaSimbolos e) {
-    error_semantico(e);
     }
     throw new Error("Missing return statement in function");
   }
@@ -466,6 +458,7 @@ leer()  < tFIN_SENTENCIA >|
   mientras_que()
   */
   static final public void sentencia() throws ParseException {
+  Token identificador;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case tLEER:
@@ -477,16 +470,16 @@ leer()  < tFIN_SENTENCIA >|
         jj_consume_token(tFIN_SENTENCIA);
         break;
       case tIDENTIFICADOR:
-        jj_consume_token(tIDENTIFICADOR);
+        identificador = jj_consume_token(tIDENTIFICADOR);
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case tPARENTESIS_IZQ:
         case tOPAS:
           switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
           case tOPAS:
-            asignacion();
+            asignacion(identificador);
             break;
           case tPARENTESIS_IZQ:
-            invocacion_accion();
+            invocacion_accion(identificador);
             break;
           default:
             jj_la1[8] = jj_gen;
@@ -585,19 +578,53 @@ leer()  < tFIN_SENTENCIA >|
   }
 
 // <tOPAS> expresion() 
-  static final public void asignacion() throws ParseException {
+  static final public void asignacion(Token t) throws ParseException {
+  Simbolo s;
+  RegistroExpr r;
+  Tipo_variable tipoID;
     try {
+      s = tabla_simbolos.buscar_simbolo(t.image);
+      if (s == null)
+      {
+        error_semantico("Identificador desconocido en la parte izquierda de la asignacion");
+        tipoID = Tipo_variable.DESCONOCIDO;
+        tabla_simbolos.introducir_variable(t.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
+      }
+      else
+      {
+        if (s.esParametro() && s.esValor())
+        {
+          error_semantico("No se puede realizar una asignacion a un parametro por valor");
+        }
+        tipoID = s.getVariable();
+      }
       jj_consume_token(tOPAS);
-      expresion();
+      r = expresion();
+      if ((tipoID != Tipo_variable.DESCONOCIDO) && (r.tipo != Tipo_variable.DESCONOCIDO) && (tipoID != r.tipo))
+      {
+        error_semantico("Tipos incompatibles en la asignacion");
+      }
     } catch (ParseException e) {
     error_sintactico(e);
     }
   }
 
 // argumentos() 
-  static final public void invocacion_accion() throws ParseException {
+  static final public void invocacion_accion(Token t) throws ParseException {
+  Simbolo s;
+  ArrayList < RegistroExpr > args;
     try {
-      argumentos();
+      args = argumentos();
+      s = tabla_simbolos.buscar_simbolo(t.image);
+      if (s == null)
+      {
+        error_semantico("Identificador de accion desconocido");
+        s = tabla_simbolos.introducir_accion(t.image, nivel, TBD);
+        s.setVariable(Tipo_variable.DESCONOCIDO);
+      }
+      else if (s.getVariable() != Tipo_variable.DESCONOCIDO)
+      {
+      }
     } catch (ParseException e) {
     error_sintactico(e);
     }
@@ -605,9 +632,25 @@ leer()  < tFIN_SENTENCIA >|
 
 // <tMQ> expresion() lista_sentencias() <tFMQ>
   static final public void mientras_que() throws ParseException {
+  RegistroExpr r;
     try {
       jj_consume_token(tMQ);
-      expresion();
+      r = expresion();
+      if (r.tipo != Tipo_variable.DESCONOCIDO && r.tipo != Tipo_variable.BOOLEANO)
+      {
+        error_semantico("La condicion en el mientras_que debe ser un booleano");
+      }
+      else if (r.tipo == Tipo_variable.BOOLEANO && r.valorBool != null)
+      {
+        if (r.valorBool == true)
+        {
+          error_semantico("Bucle infinito");
+        }
+        else
+        {
+          error_semantico("Nunca se entra en el bucle");
+        }
+      }
       lista_sentencias();
       jj_consume_token(tFMQ);
     } catch (ParseException e) {
@@ -617,9 +660,25 @@ leer()  < tFIN_SENTENCIA >|
 
 // <tSI> expresion() <tENT> lista_sentencias() (<tSI_NO> lista_sentencias())?  <tFSI>
   static final public void seleccion() throws ParseException {
+  RegistroExpr r;
     try {
       jj_consume_token(tSI);
-      expresion();
+      r = expresion();
+      if (r.tipo != Tipo_variable.DESCONOCIDO && r.tipo != Tipo_variable.BOOLEANO)
+      {
+        error_semantico("La condicien la seleccion debe ser un booleano");
+      }
+      else if (r.tipo == Tipo_variable.BOOLEANO && r.valorBool != null)
+      {
+        if (r.valorBool == true)
+        {
+          error_semantico("La condicion es siempre cierta");
+        }
+        else
+        {
+          error_semantico("La condicion nunca es cierta");
+        }
+      }
       jj_consume_token(tENT);
       lista_sentencias();
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -638,7 +697,8 @@ leer()  < tFIN_SENTENCIA >|
   }
 
 // <tPARENTESIS_IZQ> (lista_expresiones())? <tPARENTESIS_DCHA>
-  static final public void argumentos() throws ParseException {
+  static final public ArrayList < RegistroExpr > argumentos() throws ParseException {
+  ArrayList < RegistroExpr > args = new ArrayList();
     try {
       jj_consume_token(tPARENTESIS_IZQ);
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -653,22 +713,28 @@ leer()  < tFIN_SENTENCIA >|
       case tIDENTIFICADOR:
       case tVALOR_ENTERO:
       case tVALOR_DECIMAL:
-        lista_expresiones();
+        args = lista_expresiones();
         break;
       default:
         jj_la1[14] = jj_gen;
         ;
       }
       jj_consume_token(tPARENTESIS_DCHA);
+      {if (true) return args;}
     } catch (ParseException e) {
     error_sintactico(e);
+    {if (true) return args;}
     }
+    throw new Error("Missing return statement in function");
   }
 
 // expresion() (<tCOMA> expresion())*
-  static final public void lista_expresiones() throws ParseException {
+  static final public ArrayList < RegistroExpr > lista_expresiones() throws ParseException {
+  ArrayList < RegistroExpr > args = new ArrayList();
+  RegistroExpr r;
     try {
-      expresion();
+      r = expresion();
+      args.add(r);
       label_8:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -681,15 +747,19 @@ leer()  < tFIN_SENTENCIA >|
         }
         jj_consume_token(tCOMA);
         expresion();
+      args.add(r);
       }
+      {if (true) return args;}
     } catch (ParseException e) {
     error_sintactico(e);
+    {if (true) return args;}
     }
+    throw new Error("Missing return statement in function");
   }
 
 // expresion_simple() (operador_relacional() expresion_simple())*
   static final public RegistroExpr expresion() throws ParseException {
-  RegistroExpr r1, r2, resultado = new RegistroExpr();
+  RegistroExpr r1, r2;
   Token token_operador;
   String operador;
     try {
@@ -704,7 +774,7 @@ leer()  < tFIN_SENTENCIA >|
         token_operador = operador_relacional();
         r2 = expresion_simple();
       operador = token_operador.image;
-      resultado = comprobacionExpresion(r1, r2, operador);
+      r1 = comprobacionExpresion(r1, r2, operador);
       /*switch (operador)
       {
         case "=" :         
@@ -726,7 +796,8 @@ leer()  < tFIN_SENTENCIA >|
         jj_la1[16] = jj_gen;
         ;
       }
-      {if (true) return resultado;}
+      System.out.println(r1);
+      {if (true) return r1;}
     } catch (ParseException e) {
     error_sintactico(e);
     }
@@ -804,7 +875,7 @@ leer()  < tFIN_SENTENCIA >|
         else
         {
           r1 = new RegistroExpr(r1, r2, operador);
-          if (r1.valorEnt != null && (r1.valorEnt >= (2^ 16) || r1.valorEnt < (- (2^ 16))))
+          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 16) || r1.valorEnt < (- Math.pow(2, 16))))
           {
             error_semantico("Error de overflow/underflow al realizar la suma.");
             r1.valorEnt = null;
@@ -821,7 +892,7 @@ leer()  < tFIN_SENTENCIA >|
         else
         {
           r1 = new RegistroExpr(r1, r2, operador);
-          if (r1.valorEnt != null && (r1.valorEnt >= (2^ 16) || r1.valorEnt < (- (2^ 16))))
+          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 16) || r1.valorEnt < (- Math.pow(2, 16))))
           {
             error_semantico("Error de overflow/underflow al realizar la resta.");
             r1.valorEnt = null;
@@ -829,8 +900,8 @@ leer()  < tFIN_SENTENCIA >|
         }
         break;
         case "or" :
-        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
-        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        if ((r1.tipo != Tipo_variable.BOOLEANO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.BOOLEANO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
         {
           error_semantico("Tipo incompatible. Se esperaba booleano.");
           r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
@@ -909,7 +980,7 @@ leer()  < tFIN_SENTENCIA >|
         else
         {
           r1 = new RegistroExpr(r1, r2, operador);
-          if (r1.valorEnt != null && (r1.valorEnt >= (2^ 16) || r1.valorEnt < (- (2^ 16))))
+          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 16) || r1.valorEnt < (- Math.pow(2, 16))))
           {
             error_semantico("Error de overflow/underflow al realizar la multiplicacion.");
             r1.valorEnt = null;
@@ -977,8 +1048,8 @@ leer()  < tFIN_SENTENCIA >|
         }
         break;
         case "and" :
-        if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
-        || (r2.tipo != Tipo_variable.ENTERO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
+        if ((r1.tipo != Tipo_variable.BOOLEANO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
+        || (r2.tipo != Tipo_variable.BOOLEANO) && (r2.tipo != Tipo_variable.DESCONOCIDO))
         {
           error_semantico("Tipo incompatible. Se esperaba booleano.");
           r1 = new RegistroExpr(Tipo_variable.DESCONOCIDO);
@@ -1087,9 +1158,8 @@ leer()  < tFIN_SENTENCIA >|
       if ((rExpr.tipo != Tipo_variable.ENTERO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
       {
         error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.ENTERO));
-        System.out.println(rExpr);
       }
-      if ((rExpr.valorEnt != null) && (rExpr.valorEnt > 255))
+      if ((rExpr.valorEnt != null) && ((rExpr.valorEnt > 255) || (rExpr.valorEnt < 0)))
       {
         error_semantico("La expresion no se puede convertir en un caracter valido");
       }
@@ -1122,6 +1192,7 @@ leer()  < tFIN_SENTENCIA >|
       {
         rExpr.tipo = s.getVariable();
       }
+      rExpr.parametro = Clase_parametro.REF;
       {if (true) return rExpr;}
         break;
       case tVALOR_ENTERO:
