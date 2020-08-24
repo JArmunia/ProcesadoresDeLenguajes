@@ -58,7 +58,9 @@ public class MiniLenguaje
     }
     catch (ParseException e)
     {
+      System.err.println("Desde parse exception");
       System.err.println(e.getMessage());
+      e.printStackTrace();
       //MiniLenguaje.ReInit(System.in);
     }
     catch (Error e)
@@ -99,6 +101,7 @@ public class MiniLenguaje
   {
     //error_sintactico(e, "");
     System.err.println("ERROR SINTACTICO: " + e.getMessage());
+    e.printStackTrace();
     //Token lastRead = MiniLenguaje.getNextToken();
     error_skipto(tFIN_SENTENCIA, tFIN);
   }
@@ -142,6 +145,7 @@ public class MiniLenguaje
 
 PARSER_END(MiniLenguaje)
 
+< DEFAULT, COMENT >
 SKIP :
 {
   " "
@@ -151,6 +155,34 @@ SKIP :
 | < "%" (~[ "\r", "\n" ])* ([ "\r", "\n" ]) >
   {
     if (MiniLenguaje.verbose) System.out.println("COMENTARIO");
+  }
+}
+
+SKIP :
+{
+  < "%%" >
+  {
+    System.out.println("COMENTARIO (Valor: " + matchedToken + ")");
+  }
+  : COMENT
+}
+
+< COMENT >
+SKIP :
+{
+  < "%%" >
+  {
+    System.out.println("COMENTARIO (Valor: " + matchedToken + ")");
+  }
+  : DEFAULT
+}
+
+< COMENT >
+SKIP :
+{
+  < tCOMENT : (~[ "." ]) >
+  {
+    System.out.println("COMENTARIO (Valor: " + matchedToken + ")");
   }
 }
 
@@ -379,6 +411,15 @@ SKIP :
 < STRING >
 TOKEN :
 {
+  < tCHAR : (~[ "\"" ]) >
+  {
+    if (MiniLenguaje.verbose) System.out.println("CHAR (Valor: " + matchedToken + ")");
+  }
+}
+
+< STRING >
+TOKEN :
+{
   < tSTRING : (~[ "\"" ])+ >
   {
     if (MiniLenguaje.verbose) System.out.println("STRING (Valor: " + matchedToken + ")");
@@ -448,6 +489,7 @@ void declaracion_variables() :
     catch (ParseException e)
     {
       error_sintactico(e);
+      declaracion_variables();
     }
   )*
 }
@@ -542,6 +584,7 @@ void declaracion_acciones() :
     catch (ParseException e)
     {
       error_sintactico(e);
+      declaracion_acciones();
     }
   )*
 }
@@ -579,6 +622,7 @@ void cabecera_accion() :
         error_semantico(new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(token.image)));
       }
       nivel++;
+      System.out.println("Aumenta nivel accion: " + accion.getNombre() + " nivel: " + nivel);
     }
     parametros = parametros_formales()
     {
@@ -723,6 +767,7 @@ void bloque_sentencias() :
   catch (ParseException e)
   {
     error_sintactico(e);
+    lista_sentencias();    
   }
 }
 
@@ -765,7 +810,6 @@ void sentencia() :
       asignacion(identificador)
     | invocacion_accion(identificador)
     ]
-    < tFIN_SENTENCIA >
   | 
     seleccion()
   | 
@@ -779,11 +823,35 @@ void sentencia() :
 
 // <tLEER> <tPARENTESIS_IZQ> lista_asignables() <tPARENTESIS_DCHA>
 void leer() :
-{}
+{
+  ArrayList < Token > asignables = new ArrayList();
+  Simbolo s;
+}
 {
   try
   {
-    < tLEER > < tPARENTESIS_IZQ > lista_asignables() < tPARENTESIS_DCHA >
+    < tLEER > < tPARENTESIS_IZQ > asignables = lista_asignables() < tPARENTESIS_DCHA >
+    {
+      for (Token t : asignables)
+      {
+        s = tabla_simbolos.buscar_simbolo(t.image);
+        if (s == null)
+        {
+          error_semantico("Identificador desconocido: " + t.image );
+          tabla_simbolos.introducir_variable(t.image, Tipo_variable.DESCONOCIDO, nivel, TBD);			
+        }
+        else if (s.getVariable() != Tipo_variable.CHAR 
+        && s.getVariable() != Tipo_variable.ENTERO 
+        && s.getVariable() != Tipo_variable.DESCONOCIDO)
+        {
+          error_semantico("No se puede asignar la variable " + t.image + " ya que es de tipo " + s.getVariable());
+        }
+        else if (s.esParametro() && s.esValor())
+        {
+          error_semantico("No se puede asignar " + t.image + " ya que es un parametro por valor");
+        }
+      }
+    }
   }
   catch (ParseException e)
   {
@@ -792,26 +860,41 @@ void leer() :
 }
 
 // <tIDENTIFICADOR> (<tCOMA> <tIDENTIFICADOR>)*
-void lista_asignables() :
-{}
+ArrayList < Token > lista_asignables() :
+{
+  ArrayList < Token > asignables = new ArrayList();
+  Token t;
+}
 {
   try
   {
-    < tIDENTIFICADOR > (< tCOMA > < tIDENTIFICADOR >) *
+    t = < tIDENTIFICADOR >
+    {
+      asignables.add(t);
+    }
+    (< tCOMA > t = < tIDENTIFICADOR >
+    {
+      asignables.add(t);
+    }
+    ) *
+    {
+      return asignables;
+    }
   }
   catch (ParseException e)
   {
     error_sintactico(e);
+    return asignables;
   }
 }
 
 // <tESCRIBIR> <tPARENTESIS_IZQ> lista_escribibles() <tPARENTESIS_DCHA>
 void escribir() :
-{}
+{ArrayList<RegistroExpr > escribibles = new ArrayList();}
 {
   try
   {
-    < tESCRIBIR > < tPARENTESIS_IZQ > lista_escribibles() < tPARENTESIS_DCHA >
+    < tESCRIBIR > < tPARENTESIS_IZQ > escribibles = lista_escribibles() < tPARENTESIS_DCHA > 
   }
   catch (ParseException e)
   {
@@ -820,19 +903,36 @@ void escribir() :
 }
 
 // expresion() (<tCOMA> expresion())*
-void lista_escribibles() :
-{}
+ArrayList<RegistroExpr > lista_escribibles() :
 {
+  ArrayList < RegistroExpr > escribibles = new ArrayList();
+  RegistroExpr r;
+}
+{
+  //TODO: Pasar registrosexpr con la cadena que representa a cada valor que se pasa
   try
   {
-    expresion() 
+    (r = expresion()
+    {
+      escribibles.add(r);
+    }
+  | < tSTRING >) 
     (
-    < tCOMA > expresion()
+    < tCOMA > 
+    (r = expresion()
+    {
+      escribibles.add(r);
+    }
+  | < tSTRING >)
     ) *
+    {
+      return escribibles;
+    }
   }
   catch (ParseException e)
   {
     error_sintactico(e);
+    return escribibles;
   }
 }
 
@@ -850,7 +950,7 @@ void asignacion(Token t) :
       s = tabla_simbolos.buscar_simbolo(t.image);
       if (s == null)
       {
-        error_semantico("Identificador desconocido en la parte izquierda de la asignacion");
+        error_semantico("Identificador desconocido en la parte izquierda de la asignacion: " + t.image);
         tipoID = Tipo_variable.DESCONOCIDO;
         tabla_simbolos.introducir_variable(t.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
       }
@@ -870,6 +970,7 @@ void asignacion(Token t) :
         error_semantico("Tipos incompatibles en la asignacion");
       }
     }
+    < tFIN_SENTENCIA >
   }
   catch (ParseException e)
   {
@@ -880,34 +981,43 @@ void asignacion(Token t) :
 // argumentos() 
 void invocacion_accion(Token t) :
 {
-  Simbolo s;
-  ArrayList < RegistroExpr > args;
+  Simbolo accion, paramOriginal;
+  ArrayList < RegistroExpr > args = new ArrayList();
+  RegistroExpr param;
 }
 {
   try
   {
-    args = argumentos()
+    (
+    args = argumentos()) ? < tFIN_SENTENCIA >
     {
-      s = tabla_simbolos.buscar_simbolo(t.image);
-      if (s == null)
+      accion = tabla_simbolos.buscar_simbolo(t.image);
+      if (accion == null)
       {
         error_semantico("Identificador de accion desconocido");
-        s = tabla_simbolos.introducir_accion(t.image, nivel, TBD);
-        s.setVariable(Tipo_variable.DESCONOCIDO);			
+        accion = tabla_simbolos.introducir_accion(t.image, nivel, TBD);
+        accion.setVariable(Tipo_variable.DESCONOCIDO);			
       }
-      else if(!s.esAccion()) {
-		error_semantico(t.image + " no es una accion");
-      }
-      else if (s.getVariable() != Tipo_variable.DESCONOCIDO)
+      else if (!accion.esAccion())
       {
-        if (args.size() != s.getListaParametros().size()) {
-			error_semantico("El numero de parametros no coincide con el de la accion " + t.image) 
-        }else {
-			for (int i = 0; i < args.size(); i++) {
-				// TODO: Comprobar tipo de los parametros
-			}
+        error_semantico(t.image + " no es una accion");
+      }
+      else if (accion.getVariable() != Tipo_variable.DESCONOCIDO)
+      {
+        if (args.size() != accion.getListaParametros().size())
+        {
+          error_semantico("El numero de parametros no coincide con el de la accion " + 
+          t.image + ", se han proporcionado " + args.size() + " pero se requieren " + accion.getListaParametros().size());
         }
-        
+        else
+        {
+          for (int i = 0; i < args.size(); i++)
+          {
+            // TODO: Comprobar tipo de los parametros
+            paramOriginal = accion.getListaParametros().get(i);
+            param = args.get(i);
+          }
+        }
       }
     }
   }
@@ -1079,7 +1189,7 @@ RegistroExpr expresion() :
     }
     ) ?
     {
-      System.out.println(r1);
+      //System.out.println(r1);
       return r1;
     }
   }
@@ -1445,7 +1555,7 @@ RegistroExpr factor() :
       rExpr = new RegistroExpr();
       if (s == null)
       {
-        error_semantico("Identificador desconocido");
+        error_semantico("Identificador desconocido: " + t.image);
         tabla_simbolos.introducir_variable(token.image, Tipo_variable.DESCONOCIDO, nivel, TBD);	
         rExpr.tipo = Tipo_variable.DESCONOCIDO;
       }
@@ -1470,13 +1580,20 @@ RegistroExpr factor() :
       rExpr.tipo = Tipo_variable.DECIMAL;
       return rExpr;
     }
-  | t = < tSTRING >
+  | t = < tCHAR >
     {
       rExpr = new RegistroExpr();
       rExpr.valorChar = t.image;
       rExpr.tipo = Tipo_variable.CHAR;
       return rExpr;
     }
+    /*| t = < tSTRING >
+    {
+      rExpr = new RegistroExpr();
+      rExpr.valorChar = t.image;
+      rExpr.tipo = Tipo_variable.CHAR;
+      return rExpr;
+    }*/
   | t = < tTRUE >
     {
       rExpr = new RegistroExpr();

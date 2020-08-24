@@ -236,7 +236,7 @@ public class Tabla_simbolos {
 	ocultar_parametros(nivel + 1);
 	// Elimino los parámetros de la acción ya que se pueden acceder desde la lista
 	// de parámetros de la acción
-	eliminar_parametros_ocultos(nivel + 1);
+	eliminar_parametros_ocultos(nivel);
     }
 
     /**

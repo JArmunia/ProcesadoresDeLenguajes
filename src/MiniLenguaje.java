@@ -45,7 +45,9 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     }
     catch (ParseException e)
     {
+      System.err.println("Desde parse exception");
       System.err.println(e.getMessage());
+      e.printStackTrace();
       //MiniLenguaje.ReInit(System.in);
     }
     catch (Error e)
@@ -86,6 +88,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
   {
     //error_sintactico(e, "");
     System.err.println("ERROR SINTACTICO: " + e.getMessage());
+    e.printStackTrace();
     //Token lastRead = MiniLenguaje.getNextToken();
     error_skipto(tFIN_SENTENCIA, tFIN);
   }
@@ -168,6 +171,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         jj_consume_token(tFIN_SENTENCIA);
       } catch (ParseException e) {
       error_sintactico(e);
+      declaracion_variables();
       }
     }
   }
@@ -262,6 +266,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         declaracion_accion();
       } catch (ParseException e) {
       error_sintactico(e);
+      declaracion_acciones();
       }
     }
   }
@@ -292,6 +297,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         error_semantico(new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(token.image)));
       }
       nivel++;
+      System.out.println("Aumenta nivel accion: " + accion.getNombre() + " nivel: " + nivel);
       parametros = parametros_formales();
       for (Simbolo parametro : parametros)
       {
@@ -423,6 +429,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
     } catch (ParseException e) {
     error_sintactico(e);
+    lista_sentencias();
     }
   }
 
@@ -474,11 +481,13 @@ leer()  < tFIN_SENTENCIA >|
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case tPARENTESIS_IZQ:
         case tOPAS:
+        case tFIN_SENTENCIA:
           switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
           case tOPAS:
             asignacion(identificador);
             break;
           case tPARENTESIS_IZQ:
+          case tFIN_SENTENCIA:
             invocacion_accion(identificador);
             break;
           default:
@@ -491,7 +500,6 @@ leer()  < tFIN_SENTENCIA >|
           jj_la1[9] = jj_gen;
           ;
         }
-        jj_consume_token(tFIN_SENTENCIA);
         break;
       case tSI:
         seleccion();
@@ -511,20 +519,44 @@ leer()  < tFIN_SENTENCIA >|
 
 // <tLEER> <tPARENTESIS_IZQ> lista_asignables() <tPARENTESIS_DCHA>
   static final public void leer() throws ParseException {
+  ArrayList < Token > asignables = new ArrayList();
+  Simbolo s;
     try {
       jj_consume_token(tLEER);
       jj_consume_token(tPARENTESIS_IZQ);
-      lista_asignables();
+      asignables = lista_asignables();
       jj_consume_token(tPARENTESIS_DCHA);
+      for (Token t : asignables)
+      {
+        s = tabla_simbolos.buscar_simbolo(t.image);
+        if (s == null)
+        {
+          error_semantico("Identificador desconocido: " + t.image );
+          tabla_simbolos.introducir_variable(t.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
+        }
+        else if (s.getVariable() != Tipo_variable.CHAR
+        && s.getVariable() != Tipo_variable.ENTERO
+        && s.getVariable() != Tipo_variable.DESCONOCIDO)
+        {
+          error_semantico("No se puede asignar la variable " + t.image + " ya que es de tipo " + s.getVariable());
+        }
+        else if (s.esParametro() && s.esValor())
+        {
+          error_semantico("No se puede asignar " + t.image + " ya que es un parametro por valor");
+        }
+      }
     } catch (ParseException e) {
     error_sintactico(e);
     }
   }
 
 // <tIDENTIFICADOR> (<tCOMA> <tIDENTIFICADOR>)*
-  static final public void lista_asignables() throws ParseException {
+  static final public ArrayList < Token > lista_asignables() throws ParseException {
+  ArrayList < Token > asignables = new ArrayList();
+  Token t;
     try {
-      jj_consume_token(tIDENTIFICADOR);
+      t = jj_consume_token(tIDENTIFICADOR);
+      asignables.add(t);
       label_6:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -536,19 +568,24 @@ leer()  < tFIN_SENTENCIA >|
           break label_6;
         }
         jj_consume_token(tCOMA);
-        jj_consume_token(tIDENTIFICADOR);
+        t = jj_consume_token(tIDENTIFICADOR);
+      asignables.add(t);
       }
+      {if (true) return asignables;}
     } catch (ParseException e) {
     error_sintactico(e);
+    {if (true) return asignables;}
     }
+    throw new Error("Missing return statement in function");
   }
 
 // <tESCRIBIR> <tPARENTESIS_IZQ> lista_escribibles() <tPARENTESIS_DCHA>
   static final public void escribir() throws ParseException {
+ ArrayList<RegistroExpr > escribibles = new ArrayList();
     try {
       jj_consume_token(tESCRIBIR);
       jj_consume_token(tPARENTESIS_IZQ);
-      lista_escribibles();
+      escribibles = lista_escribibles();
       jj_consume_token(tPARENTESIS_DCHA);
     } catch (ParseException e) {
     error_sintactico(e);
@@ -556,9 +593,33 @@ leer()  < tFIN_SENTENCIA >|
   }
 
 // expresion() (<tCOMA> expresion())*
-  static final public void lista_escribibles() throws ParseException {
+  static final public ArrayList<RegistroExpr > lista_escribibles() throws ParseException {
+  ArrayList < RegistroExpr > escribibles = new ArrayList();
+  RegistroExpr r;
     try {
-      expresion();
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tNOT:
+      case tTRUE:
+      case tFALSE:
+      case tENTACAR:
+      case tCARAENT:
+      case tPARENTESIS_IZQ:
+      case tMENOS:
+      case tCHAR:
+      case tIDENTIFICADOR:
+      case tVALOR_ENTERO:
+      case tVALOR_DECIMAL:
+        r = expresion();
+      escribibles.add(r);
+        break;
+      case tSTRING:
+        jj_consume_token(tSTRING);
+        break;
+      default:
+        jj_la1[12] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
       label_7:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -566,15 +627,40 @@ leer()  < tFIN_SENTENCIA >|
           ;
           break;
         default:
-          jj_la1[12] = jj_gen;
+          jj_la1[13] = jj_gen;
           break label_7;
         }
         jj_consume_token(tCOMA);
-        expresion();
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tNOT:
+        case tTRUE:
+        case tFALSE:
+        case tENTACAR:
+        case tCARAENT:
+        case tPARENTESIS_IZQ:
+        case tMENOS:
+        case tCHAR:
+        case tIDENTIFICADOR:
+        case tVALOR_ENTERO:
+        case tVALOR_DECIMAL:
+          r = expresion();
+      escribibles.add(r);
+          break;
+        case tSTRING:
+          jj_consume_token(tSTRING);
+          break;
+        default:
+          jj_la1[14] = jj_gen;
+          jj_consume_token(-1);
+          throw new ParseException();
+        }
       }
+      {if (true) return escribibles;}
     } catch (ParseException e) {
     error_sintactico(e);
+    {if (true) return escribibles;}
     }
+    throw new Error("Missing return statement in function");
   }
 
 // <tOPAS> expresion() 
@@ -586,7 +672,7 @@ leer()  < tFIN_SENTENCIA >|
       s = tabla_simbolos.buscar_simbolo(t.image);
       if (s == null)
       {
-        error_semantico("Identificador desconocido en la parte izquierda de la asignacion");
+        error_semantico("Identificador desconocido en la parte izquierda de la asignacion: " + t.image);
         tipoID = Tipo_variable.DESCONOCIDO;
         tabla_simbolos.introducir_variable(t.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
       }
@@ -604,6 +690,7 @@ leer()  < tFIN_SENTENCIA >|
       {
         error_semantico("Tipos incompatibles en la asignacion");
       }
+      jj_consume_token(tFIN_SENTENCIA);
     } catch (ParseException e) {
     error_sintactico(e);
     }
@@ -611,19 +698,46 @@ leer()  < tFIN_SENTENCIA >|
 
 // argumentos() 
   static final public void invocacion_accion(Token t) throws ParseException {
-  Simbolo s;
-  ArrayList < RegistroExpr > args;
+  Simbolo accion, paramOriginal;
+  ArrayList < RegistroExpr > args = new ArrayList();
+  RegistroExpr param;
     try {
-      args = argumentos();
-      s = tabla_simbolos.buscar_simbolo(t.image);
-      if (s == null)
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tPARENTESIS_IZQ:
+        args = argumentos();
+        break;
+      default:
+        jj_la1[15] = jj_gen;
+        ;
+      }
+      jj_consume_token(tFIN_SENTENCIA);
+      accion = tabla_simbolos.buscar_simbolo(t.image);
+      if (accion == null)
       {
         error_semantico("Identificador de accion desconocido");
-        s = tabla_simbolos.introducir_accion(t.image, nivel, TBD);
-        s.setVariable(Tipo_variable.DESCONOCIDO);
+        accion = tabla_simbolos.introducir_accion(t.image, nivel, TBD);
+        accion.setVariable(Tipo_variable.DESCONOCIDO);
       }
-      else if (s.getVariable() != Tipo_variable.DESCONOCIDO)
+      else if (!accion.esAccion())
       {
+        error_semantico(t.image + " no es una accion");
+      }
+      else if (accion.getVariable() != Tipo_variable.DESCONOCIDO)
+      {
+        if (args.size() != accion.getListaParametros().size())
+        {
+          error_semantico("El numero de parametros no coincide con el de la accion " +
+          t.image + ", se han proporcionado " + args.size() + " pero se requieren " + accion.getListaParametros().size());
+        }
+        else
+        {
+          for (int i = 0; i < args.size(); i++)
+          {
+            // TODO: Comprobar tipo de los parametros
+            paramOriginal = accion.getListaParametros().get(i);
+            param = args.get(i);
+          }
+        }
       }
     } catch (ParseException e) {
     error_sintactico(e);
@@ -687,7 +801,7 @@ leer()  < tFIN_SENTENCIA >|
         lista_sentencias();
         break;
       default:
-        jj_la1[13] = jj_gen;
+        jj_la1[16] = jj_gen;
         ;
       }
       jj_consume_token(tFSI);
@@ -709,14 +823,14 @@ leer()  < tFIN_SENTENCIA >|
       case tCARAENT:
       case tPARENTESIS_IZQ:
       case tMENOS:
-      case tSTRING:
+      case tCHAR:
       case tIDENTIFICADOR:
       case tVALOR_ENTERO:
       case tVALOR_DECIMAL:
         args = lista_expresiones();
         break;
       default:
-        jj_la1[14] = jj_gen;
+        jj_la1[17] = jj_gen;
         ;
       }
       jj_consume_token(tPARENTESIS_DCHA);
@@ -742,7 +856,7 @@ leer()  < tFIN_SENTENCIA >|
           ;
           break;
         default:
-          jj_la1[15] = jj_gen;
+          jj_la1[18] = jj_gen;
           break label_8;
         }
         jj_consume_token(tCOMA);
@@ -793,10 +907,10 @@ leer()  < tFIN_SENTENCIA >|
 
         break;
       default:
-        jj_la1[16] = jj_gen;
+        jj_la1[19] = jj_gen;
         ;
       }
-      System.out.println(r1);
+      //System.out.println(r1);
       {if (true) return r1;}
     } catch (ParseException e) {
     error_sintactico(e);
@@ -833,7 +947,7 @@ leer()  < tFIN_SENTENCIA >|
     {if (true) return t;}
       break;
     default:
-      jj_la1[17] = jj_gen;
+      jj_la1[20] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -857,7 +971,7 @@ leer()  < tFIN_SENTENCIA >|
           ;
           break;
         default:
-          jj_la1[18] = jj_gen;
+          jj_la1[21] = jj_gen;
           break label_9;
         }
         token_operador = operador_aditivo();
@@ -938,7 +1052,7 @@ leer()  < tFIN_SENTENCIA >|
     {if (true) return t;}
       break;
     default:
-      jj_la1[19] = jj_gen;
+      jj_la1[22] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -962,7 +1076,7 @@ leer()  < tFIN_SENTENCIA >|
           ;
           break;
         default:
-          jj_la1[20] = jj_gen;
+          jj_la1[23] = jj_gen;
           break label_10;
         }
         token_operador = operador_multiplicativo();
@@ -1090,7 +1204,7 @@ leer()  < tFIN_SENTENCIA >|
     {if (true) return t;}
       break;
     default:
-      jj_la1[21] = jj_gen;
+      jj_la1[24] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -1184,7 +1298,7 @@ leer()  < tFIN_SENTENCIA >|
       rExpr = new RegistroExpr();
       if (s == null)
       {
-        error_semantico("Identificador desconocido");
+        error_semantico("Identificador desconocido: " + t.image);
         tabla_simbolos.introducir_variable(token.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
         rExpr.tipo = Tipo_variable.DESCONOCIDO;
       }
@@ -1209,8 +1323,8 @@ leer()  < tFIN_SENTENCIA >|
       rExpr.tipo = Tipo_variable.DECIMAL;
       {if (true) return rExpr;}
         break;
-      case tSTRING:
-        t = jj_consume_token(tSTRING);
+      case tCHAR:
+        t = jj_consume_token(tCHAR);
       rExpr = new RegistroExpr();
       rExpr.valorChar = t.image;
       rExpr.tipo = Tipo_variable.CHAR;
@@ -1231,7 +1345,7 @@ leer()  < tFIN_SENTENCIA >|
       {if (true) return rExpr;}
         break;
       default:
-        jj_la1[22] = jj_gen;
+        jj_la1[25] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -1252,7 +1366,7 @@ leer()  < tFIN_SENTENCIA >|
   static public Token jj_nt;
   static private int jj_ntk;
   static private int jj_gen;
-  static final private int[] jj_la1 = new int[23];
+  static final private int[] jj_la1 = new int[26];
   static private int[] jj_la1_0;
   static private int[] jj_la1_1;
   static {
@@ -1260,10 +1374,10 @@ leer()  < tFIN_SENTENCIA >|
       jj_la1_init_1();
    }
    private static void jj_la1_init_0() {
-      jj_la1_0 = new int[] {0x80000000,0x80000000,0x0,0x10000000,0x0,0x0,0x60000000,0x688000,0x0,0x0,0x688000,0x0,0x0,0x20000,0xf001000,0x0,0x0,0x0,0x800,0x800,0x800400,0x800400,0xf001000,};
+      jj_la1_0 = new int[] {0x0,0x0,0x0,0x80000000,0x0,0x0,0x0,0x3440000,0x0,0x0,0x3440000,0x0,0x78008000,0x0,0x78008000,0x0,0x100000,0x78008000,0x0,0x0,0x0,0x4000,0x4000,0x4002000,0x4002000,0x78008000,};
    }
    private static void jj_la1_init_1() {
-      jj_la1_1 = new int[] {0x7,0x7,0x1000,0x0,0x800,0x20,0x0,0x2000000,0x220,0x220,0x2000000,0x1000,0x1000,0x0,0xf004020,0x1000,0x3e0400,0x3e0400,0x6000,0x6000,0x18000,0x18000,0xf004020,};
+      jj_la1_1 = new int[] {0x3c,0x3c,0x8000,0x0,0x4000,0x100,0x3,0x20000000,0x5100,0x5100,0x20000000,0x8000,0xf8020100,0x8000,0xf8020100,0x100,0x0,0xe8020100,0x8000,0x1f02000,0x1f02000,0x30000,0x30000,0xc0000,0xc0000,0xe8020100,};
    }
 
   /** Constructor with InputStream. */
@@ -1284,7 +1398,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -1298,7 +1412,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
   }
 
   /** Constructor. */
@@ -1315,7 +1429,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -1325,7 +1439,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
   }
 
   /** Constructor with generated Token Manager. */
@@ -1341,7 +1455,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -1350,7 +1464,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
   }
 
   static private Token jj_consume_token(int kind) throws ParseException {
@@ -1401,12 +1515,12 @@ leer()  < tFIN_SENTENCIA >|
   /** Generate ParseException. */
   static public ParseException generateParseException() {
     jj_expentries.clear();
-    boolean[] la1tokens = new boolean[60];
+    boolean[] la1tokens = new boolean[64];
     if (jj_kind >= 0) {
       la1tokens[jj_kind] = true;
       jj_kind = -1;
     }
-    for (int i = 0; i < 23; i++) {
+    for (int i = 0; i < 26; i++) {
       if (jj_la1[i] == jj_gen) {
         for (int j = 0; j < 32; j++) {
           if ((jj_la1_0[i] & (1<<j)) != 0) {
@@ -1418,7 +1532,7 @@ leer()  < tFIN_SENTENCIA >|
         }
       }
     }
-    for (int i = 0; i < 60; i++) {
+    for (int i = 0; i < 64; i++) {
       if (la1tokens[i]) {
         jj_expentry = new int[1];
         jj_expentry[0] = i;

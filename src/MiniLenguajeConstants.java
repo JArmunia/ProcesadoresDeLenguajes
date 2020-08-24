@@ -9,114 +9,120 @@ public interface MiniLenguajeConstants {
   /** End of File. */
   int EOF = 0;
   /** RegularExpression Id. */
-  int tCLASE = 6;
+  int tCOMENT = 8;
   /** RegularExpression Id. */
-  int tMETODO = 7;
+  int tCLASE = 9;
   /** RegularExpression Id. */
-  int tPROGRAMA = 8;
+  int tMETODO = 10;
   /** RegularExpression Id. */
-  int tVAR = 9;
+  int tPROGRAMA = 11;
   /** RegularExpression Id. */
-  int tAND = 10;
+  int tVAR = 12;
   /** RegularExpression Id. */
-  int tOR = 11;
+  int tAND = 13;
   /** RegularExpression Id. */
-  int tNOT = 12;
+  int tOR = 14;
   /** RegularExpression Id. */
-  int tPRINCIPIO = 13;
+  int tNOT = 15;
   /** RegularExpression Id. */
-  int tFIN = 14;
+  int tPRINCIPIO = 16;
   /** RegularExpression Id. */
-  int tSI = 15;
+  int tFIN = 17;
   /** RegularExpression Id. */
-  int tENT = 16;
+  int tSI = 18;
   /** RegularExpression Id. */
-  int tSI_NO = 17;
+  int tENT = 19;
   /** RegularExpression Id. */
-  int tFSI = 18;
+  int tSI_NO = 20;
   /** RegularExpression Id. */
-  int tMQ = 19;
+  int tFSI = 21;
   /** RegularExpression Id. */
-  int tFMQ = 20;
+  int tMQ = 22;
   /** RegularExpression Id. */
-  int tESCRIBIR = 21;
+  int tFMQ = 23;
   /** RegularExpression Id. */
-  int tLEER = 22;
+  int tESCRIBIR = 24;
   /** RegularExpression Id. */
-  int tMOD = 23;
+  int tLEER = 25;
   /** RegularExpression Id. */
-  int tTRUE = 24;
+  int tMOD = 26;
   /** RegularExpression Id. */
-  int tFALSE = 25;
+  int tTRUE = 27;
   /** RegularExpression Id. */
-  int tENTACAR = 26;
+  int tFALSE = 28;
   /** RegularExpression Id. */
-  int tCARAENT = 27;
+  int tENTACAR = 29;
   /** RegularExpression Id. */
-  int tACCION = 28;
+  int tCARAENT = 30;
   /** RegularExpression Id. */
-  int tVAL = 29;
+  int tACCION = 31;
   /** RegularExpression Id. */
-  int tREF = 30;
+  int tVAL = 32;
   /** RegularExpression Id. */
-  int tENTERO = 31;
+  int tREF = 33;
   /** RegularExpression Id. */
-  int tDECIMAL = 32;
+  int tENTERO = 34;
   /** RegularExpression Id. */
-  int tBOOLEANO = 33;
+  int tDECIMAL = 35;
   /** RegularExpression Id. */
-  int tCARACTER = 34;
+  int tBOOLEANO = 36;
   /** RegularExpression Id. */
-  int tLLAVE_IZQ = 35;
+  int tCARACTER = 37;
   /** RegularExpression Id. */
-  int tLLAVE_DCHA = 36;
+  int tLLAVE_IZQ = 38;
   /** RegularExpression Id. */
-  int tPARENTESIS_IZQ = 37;
+  int tLLAVE_DCHA = 39;
   /** RegularExpression Id. */
-  int tPARENTESIS_DCHA = 38;
+  int tPARENTESIS_IZQ = 40;
   /** RegularExpression Id. */
-  int tCORCHETE_IZQ = 39;
+  int tPARENTESIS_DCHA = 41;
   /** RegularExpression Id. */
-  int tCORCHETE_DCHA = 40;
+  int tCORCHETE_IZQ = 42;
   /** RegularExpression Id. */
-  int tOPAS = 41;
+  int tCORCHETE_DCHA = 43;
   /** RegularExpression Id. */
-  int tIGUAL = 42;
+  int tOPAS = 44;
   /** RegularExpression Id. */
-  int tFIN_SENTENCIA = 43;
+  int tIGUAL = 45;
   /** RegularExpression Id. */
-  int tCOMA = 44;
+  int tFIN_SENTENCIA = 46;
   /** RegularExpression Id. */
-  int tMAS = 45;
+  int tCOMA = 47;
   /** RegularExpression Id. */
-  int tMENOS = 46;
+  int tMAS = 48;
   /** RegularExpression Id. */
-  int tPOR = 47;
+  int tMENOS = 49;
   /** RegularExpression Id. */
-  int tDIV = 48;
+  int tPOR = 50;
   /** RegularExpression Id. */
-  int tMAI = 49;
+  int tDIV = 51;
   /** RegularExpression Id. */
-  int tMEI = 50;
+  int tMAI = 52;
   /** RegularExpression Id. */
-  int tNI = 51;
+  int tMEI = 53;
   /** RegularExpression Id. */
-  int tMAYOR = 52;
+  int tNI = 54;
   /** RegularExpression Id. */
-  int tMENOR = 53;
+  int tMAYOR = 55;
   /** RegularExpression Id. */
-  int tSTRING = 56;
+  int tMENOR = 56;
   /** RegularExpression Id. */
-  int tIDENTIFICADOR = 57;
+  int tCHAR = 59;
   /** RegularExpression Id. */
-  int tVALOR_ENTERO = 58;
+  int tSTRING = 60;
   /** RegularExpression Id. */
-  int tVALOR_DECIMAL = 59;
+  int tIDENTIFICADOR = 61;
+  /** RegularExpression Id. */
+  int tVALOR_ENTERO = 62;
+  /** RegularExpression Id. */
+  int tVALOR_DECIMAL = 63;
 
   /** Lexical state. */
   int DEFAULT = 0;
   /** Lexical state. */
-  int STRING = 1;
+  int COMENT = 1;
+  /** Lexical state. */
+  int STRING = 2;
 
   /** Literal token values. */
   String[] tokenImage = {
@@ -126,6 +132,9 @@ public interface MiniLenguajeConstants {
     "\"\\t\"",
     "\"\\n\"",
     "<token of kind 5>",
+    "\"%%\"",
+    "\"%%\"",
+    "<tCOMENT>",
     "\"clase\"",
     "\"metodo\"",
     "\"programa\"",
@@ -176,6 +185,7 @@ public interface MiniLenguajeConstants {
     "\"<\"",
     "\"\\\"\"",
     "\"\\\"\"",
+    "<tCHAR>",
     "<tSTRING>",
     "<tIDENTIFICADOR>",
     "<tVALOR_ENTERO>",
