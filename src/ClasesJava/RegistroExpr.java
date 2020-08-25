@@ -17,18 +17,18 @@ public class RegistroExpr {
 	this.tipo = tipo;
     }
 
-    public RegistroExpr(Tipo_variable tipo, Integer v) {
-	this.tipo = tipo;
+    public RegistroExpr( Integer v) {
+	this.tipo = Tipo_variable.ENTERO;
 	this.valorEnt = v;
     }
 
-    public RegistroExpr(Tipo_variable tipo, Boolean v) {
-	this.tipo = tipo;
+    public RegistroExpr(Boolean v) {
+	this.tipo = Tipo_variable.BOOLEANO;
 	this.valorBool = v;
     }
 
-    public RegistroExpr(Tipo_variable tipo, String v) {
-	this.tipo = tipo;
+    public RegistroExpr(String v) {
+	this.tipo = Tipo_variable.CHAR;
 	this.valorChar = v;
     }
 
@@ -197,7 +197,7 @@ public class RegistroExpr {
 	    sb.append(valorChar);
 	    break;
 	}
-
+	sb.append(", par: " + parametro); 
 	return sb.toString();
     }
 

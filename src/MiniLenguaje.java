@@ -3,6 +3,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import ClasesJava.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MiniLenguaje implements MiniLenguajeConstants {
   public static boolean verbose = false;
@@ -24,8 +25,8 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     FileInputStream file = null;
     try
     {
-      file = new FileInputStream(args [0]);
-      MiniLenguaje parser = new MiniLenguaje(file);
+      file = new FileInputStream(args [0]+ ".ml");
+      MiniLenguaje parser = new MiniLenguaje(file );
     }
     catch (FileNotFoundException e)
     {
@@ -58,9 +59,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     }
   }
 
-  /**
-* Código obtenido de https://stackoverflow.com/questions/29127861/dont-stop-parsing-after-first-exception
-*/
+
   private static void error_skipto(int kind)
   {
     //ParseException e = generateParseException();
@@ -297,7 +296,8 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         error_semantico(new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(token.image)));
       }
       nivel++;
-      System.out.println("Aumenta nivel accion: " + accion.getNombre() + " nivel: " + nivel);
+      //System.out.println("Aumenta nivel accion: " + accion.getNombre() + " nivel: " + nivel);
+
       parametros = parametros_formales();
       for (Simbolo parametro : parametros)
       {
@@ -531,7 +531,7 @@ leer()  < tFIN_SENTENCIA >|
         s = tabla_simbolos.buscar_simbolo(t.image);
         if (s == null)
         {
-          error_semantico("Identificador desconocido: " + t.image );
+          error_semantico("Identificador desconocido: " + t.image);
           tabla_simbolos.introducir_variable(t.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
         }
         else if (s.getVariable() != Tipo_variable.CHAR
@@ -581,21 +581,28 @@ leer()  < tFIN_SENTENCIA >|
 
 // <tESCRIBIR> <tPARENTESIS_IZQ> lista_escribibles() <tPARENTESIS_DCHA>
   static final public void escribir() throws ParseException {
- ArrayList<RegistroExpr > escribibles = new ArrayList();
+  ArrayList < RegistroExpr > escribibles = new ArrayList();
     try {
       jj_consume_token(tESCRIBIR);
       jj_consume_token(tPARENTESIS_IZQ);
       escribibles = lista_escribibles();
       jj_consume_token(tPARENTESIS_DCHA);
+      //System.out.println("Escribibles en la linea: " + token.beginLine);
+      //System.out.println(Arrays.toString(escribibles.toArray()));
+      for (RegistroExpr r : escribibles)
+      {
+        //System.out.println(r.valorChar);
+      }
     } catch (ParseException e) {
     error_sintactico(e);
     }
   }
 
 // expresion() (<tCOMA> expresion())*
-  static final public ArrayList<RegistroExpr > lista_escribibles() throws ParseException {
+  static final public ArrayList < RegistroExpr > lista_escribibles() throws ParseException {
   ArrayList < RegistroExpr > escribibles = new ArrayList();
-  RegistroExpr r;
+  RegistroExpr r, resultado;
+  Token string;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case tNOT:
@@ -610,10 +617,27 @@ leer()  < tFIN_SENTENCIA >|
       case tVALOR_ENTERO:
       case tVALOR_DECIMAL:
         r = expresion();
-      escribibles.add(r);
+      if (r.tipo == Tipo_variable.BOOLEANO && r.valorBool != null)
+      {
+        if (r.valorBool)
+        {
+          resultado = new RegistroExpr("Verdadero");
+        }
+        else
+        {
+          resultado = new RegistroExpr("False");
+        }
+      }
+      else // Si es de tipo char, entero, desconocido o un booleano con valor nulo, no hacen falta transformaciones
+      {
+        resultado = new RegistroExpr("" + r.valorChar);
+      }
+      escribibles.add(resultado);
         break;
       case tSTRING:
-        jj_consume_token(tSTRING);
+        string = jj_consume_token(tSTRING);
+      resultado = new RegistroExpr(string.image);
+      escribibles.add(resultado);
         break;
       default:
         jj_la1[12] = jj_gen;
@@ -644,10 +668,31 @@ leer()  < tFIN_SENTENCIA >|
         case tVALOR_ENTERO:
         case tVALOR_DECIMAL:
           r = expresion();
-      escribibles.add(r);
+      if (r.tipo == Tipo_variable.ENTERO && r.valorEnt != null)
+      {
+        resultado = new RegistroExpr("" + r.valorEnt);
+      }
+      else if (r.tipo == Tipo_variable.BOOLEANO && r.valorBool != null)
+      {
+        if (r.valorBool)
+        {
+          resultado = new RegistroExpr("Verdadero");
+        }
+        else
+        {
+          resultado = new RegistroExpr("Falso");
+        }
+      }
+      else // Si es de tipo char, entero, desconocido o un booleano con valor nulo, no hacen falta transformaciones
+      {
+        resultado = new RegistroExpr("" + r.valorChar);
+      }
+      escribibles.add(resultado);
           break;
         case tSTRING:
-          jj_consume_token(tSTRING);
+          string = jj_consume_token(tSTRING);
+      resultado = new RegistroExpr(string.image);
+      escribibles.add(resultado);
           break;
         default:
           jj_la1[14] = jj_gen;
@@ -714,7 +759,7 @@ leer()  < tFIN_SENTENCIA >|
       accion = tabla_simbolos.buscar_simbolo(t.image);
       if (accion == null)
       {
-        error_semantico("Identificador de accion desconocido");
+        error_semantico("Identificador de accion desconocido: "  + t.image);
         accion = tabla_simbolos.introducir_accion(t.image, nivel, TBD);
         accion.setVariable(Tipo_variable.DESCONOCIDO);
       }
@@ -736,6 +781,22 @@ leer()  < tFIN_SENTENCIA >|
             // TODO: Comprobar tipo de los parametros
             paramOriginal = accion.getListaParametros().get(i);
             param = args.get(i);
+            //System.out.println(Arrays.toString(args.toArray()));
+            //System.out.println(param + " accion: " + accion.getNombre() + " parametro: " + paramOriginal);
+            if (paramOriginal.getVariable() != param.tipo
+            && param.tipo != Tipo_variable.DESCONOCIDO)
+            {
+              error_semantico("El tipo del parametro en la posicion " + i +
+              " no coincide, deberia ser " + paramOriginal.getVariable() +
+              " pero es " + param.tipo + " en la accion " + accion.getNombre());
+            }
+            if (paramOriginal.getParametro() == Clase_parametro.REF
+            && param.parametro != Clase_parametro.REF)
+            {
+
+              error_semantico("El parametro en la posicion " + i +
+              " deberia ser un parametro por referencia, pero se ha pasado un parametro por valor"+ " en la accion " + accion.getNombre());
+            }
           }
         }
       }
@@ -860,7 +921,7 @@ leer()  < tFIN_SENTENCIA >|
           break label_8;
         }
         jj_consume_token(tCOMA);
-        expresion();
+        r = expresion();
       args.add(r);
       }
       {if (true) return args;}
@@ -1299,14 +1360,23 @@ leer()  < tFIN_SENTENCIA >|
       if (s == null)
       {
         error_semantico("Identificador desconocido: " + t.image);
-        tabla_simbolos.introducir_variable(token.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
+        s = tabla_simbolos.introducir_variable(token.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
         rExpr.tipo = Tipo_variable.DESCONOCIDO;
+      }else if (s.esAccion()) {
+                error_semantico("No se puede utilizar una accion como expresion");
       }
       else
       {
         rExpr.tipo = s.getVariable();
       }
-      rExpr.parametro = Clase_parametro.REF;
+      if (s.esParametro())
+      {
+        rExpr.parametro = s.getParametro();
+      }
+      else if (s.esVariable())
+      {
+        rExpr.parametro = Clase_parametro.REF;
+      }
       {if (true) return rExpr;}
         break;
       case tVALOR_ENTERO:

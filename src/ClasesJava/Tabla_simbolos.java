@@ -122,6 +122,7 @@ public class Tabla_simbolos {
 	if (!esta(nombre, nivel)) {
 
 	    variable = Simbolo.variable(nombre, t_variable, nivel, dir);
+	    variable.setParametro(Clase_parametro.REF);
 	    introducir(variable);
 	}
 	return variable;
