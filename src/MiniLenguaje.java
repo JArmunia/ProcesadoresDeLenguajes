@@ -25,8 +25,8 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     FileInputStream file = null;
     try
     {
-      file = new FileInputStream(args [0]+ ".ml");
-      MiniLenguaje parser = new MiniLenguaje(file );
+      file = new FileInputStream(args [0] + ".ml");
+      MiniLenguaje parser = new MiniLenguaje(file);
     }
     catch (FileNotFoundException e)
     {
@@ -48,7 +48,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     {
       System.err.println("Desde parse exception");
       System.err.println(e.getMessage());
-      e.printStackTrace();
+      //e.printStackTrace();
       //MiniLenguaje.ReInit(System.in);
     }
     catch (Error e)
@@ -59,7 +59,6 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     }
   }
 
-
   private static void error_skipto(int kind)
   {
     //ParseException e = generateParseException();
@@ -69,6 +68,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     {
       t = getNextToken();
     }
+
   }
 
   private static void error_skipto(int kind1, int kind2)
@@ -79,17 +79,20 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     do
     {
       t = getNextToken();
+      System.out.println(t);
     }
     while (t.kind != kind1 && t.kind != kind2 && t.kind != EOF);
+
   }
 
   private static void error_sintactico(ParseException e)
   {
     //error_sintactico(e, "");
     System.err.println("ERROR SINTACTICO: " + e.getMessage());
-    e.printStackTrace();
+    //e.printStackTrace();
     //Token lastRead = MiniLenguaje.getNextToken();
-    error_skipto(tFIN_SENTENCIA, tFIN);
+    //error_skipto(tFIN_SENTENCIA, tFIN);
+    getNextToken();
   }
 
   private static void error_sintactico(ParseException e, String msg)
@@ -99,6 +102,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     //System.err.println("ERROR SINTACTICO (<" + lastRead.beginLine + ", " + 
     //lastRead.beginColumn + ">) : <Simbolo obtenido: '" + lastRead.image + 
     //"'. " + msg + ">");
+
   }
 
   private static void error_semantico(Exception e)
@@ -287,6 +291,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
   static final public void cabecera_accion() throws ParseException {
   ArrayList < Simbolo > parametros;
   Simbolo accion;
+  Boolean buscarParametros = true;
     try {
       jj_consume_token(tACCION);
       jj_consume_token(tIDENTIFICADOR);
@@ -294,14 +299,18 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       if (accion == null)
       {
         error_semantico(new ExcepcionTablaSimbolos(token, nivel, tabla_simbolos.buscar_simbolo(token.image)));
+        buscarParametros = false;
       }
       nivel++;
       //System.out.println("Aumenta nivel accion: " + accion.getNombre() + " nivel: " + nivel);
 
       parametros = parametros_formales();
-      for (Simbolo parametro : parametros)
+      if (buscarParametros)
       {
-        accion.introducir_parametro(parametro);
+        for (Simbolo parametro : parametros)
+        {
+          accion.introducir_parametro(parametro);
+        }
       }
     } catch (ParseException e) {
     error_sintactico(e);
@@ -534,6 +543,9 @@ leer()  < tFIN_SENTENCIA >|
           error_semantico("Identificador desconocido: " + t.image);
           tabla_simbolos.introducir_variable(t.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
         }
+        else if (s.getTipoSimbolo() == Tipo_simbolo.ACCION){
+          error_semantico("No se puede asignar el simbolo " + t.image + " ya que es una accion");
+        }
         else if (s.getVariable() != Tipo_variable.CHAR
         && s.getVariable() != Tipo_variable.ENTERO
         && s.getVariable() != Tipo_variable.DESCONOCIDO)
@@ -591,7 +603,7 @@ leer()  < tFIN_SENTENCIA >|
       //System.out.println(Arrays.toString(escribibles.toArray()));
       for (RegistroExpr r : escribibles)
       {
-        //System.out.println(r.valorChar);
+      //System.out.println(r.valorChar);
       }
     } catch (ParseException e) {
     error_sintactico(e);
@@ -759,7 +771,7 @@ leer()  < tFIN_SENTENCIA >|
       accion = tabla_simbolos.buscar_simbolo(t.image);
       if (accion == null)
       {
-        error_semantico("Identificador de accion desconocido: "  + t.image);
+        error_semantico("Identificador de accion desconocido: " + t.image);
         accion = tabla_simbolos.introducir_accion(t.image, nivel, TBD);
         accion.setVariable(Tipo_variable.DESCONOCIDO);
       }
@@ -793,9 +805,9 @@ leer()  < tFIN_SENTENCIA >|
             if (paramOriginal.getParametro() == Clase_parametro.REF
             && param.parametro != Clase_parametro.REF)
             {
-
               error_semantico("El parametro en la posicion " + i +
-              " deberia ser un parametro por referencia, pero se ha pasado un parametro por valor"+ " en la accion " + accion.getNombre());
+              " deberia ser un parametro por referencia, pero se ha pasado un parametro por valor" + " en la accion " + accion.getNombre());
+              System.out.println(tabla_simbolos);
             }
           }
         }
@@ -1362,8 +1374,10 @@ leer()  < tFIN_SENTENCIA >|
         error_semantico("Identificador desconocido: " + t.image);
         s = tabla_simbolos.introducir_variable(token.image, Tipo_variable.DESCONOCIDO, nivel, TBD);
         rExpr.tipo = Tipo_variable.DESCONOCIDO;
-      }else if (s.esAccion()) {
-                error_semantico("No se puede utilizar una accion como expresion");
+      }
+      else if (s.esAccion())
+      {
+        error_semantico("No se puede utilizar una accion como expresion");
       }
       else
       {

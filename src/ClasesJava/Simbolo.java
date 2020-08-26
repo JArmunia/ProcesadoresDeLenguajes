@@ -222,7 +222,7 @@ public class Simbolo {
 	    str = "Par: " + parametro + " " + variable + " " + nombre + ":" + nivel ;
 	    break;
 	case VARIABLE:
-	    str = "Var: " + variable + " " + nombre  + ":" + nivel; 
+	    str = "Var: "+ parametro + " " + variable + " " + nombre  + ":" + nivel; 
 	    break;
 	default:
 	    break;
