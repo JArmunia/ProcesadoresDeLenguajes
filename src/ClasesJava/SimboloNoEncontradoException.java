@@ -1,4 +1,4 @@
-package ClasesJava;
+package clasesJava;
 
 public class SimboloNoEncontradoException extends Exception {
 

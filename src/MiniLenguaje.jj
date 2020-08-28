@@ -13,7 +13,7 @@ options
 PARSER_BEGIN(MiniLenguaje)
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import ClasesJava.*;
+import clasesJava.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -148,45 +148,35 @@ public class MiniLenguaje
 
 PARSER_END(MiniLenguaje)
 
-< DEFAULT, COMENT >
+< DEFAULT>
 SKIP :
 {
   " "
 | "\r"
 | "\t"
 | "\n"
-| < "%" (~[ "\r", "\n" ])* ([ "\r", "\n" ]) >
-  {
-    if (MiniLenguaje.verbose) System.out.println("COMENTARIO");
-  }
+| < ["%"] ~["%"] > : COMENT
+| < ["%"] ["%"] > : COMENT_MULTI
 }
 
-SKIP :
+< COMENT > SKIP :
 {
-  < "%%" >
-  {
-    System.out.println("COMENTARIO (Valor: " + matchedToken + ")");
-  }
-  : COMENT
+  "\n" : DEFAULT
 }
 
-< COMENT >
-SKIP :
+< COMENT > MORE :
 {
-  < "%%" >
-  {
-    System.out.println("COMENTARIO (Valor: " + matchedToken + ")");
-  }
-  : DEFAULT
+  < ~[] >
 }
 
-< COMENT >
-SKIP :
+< COMENT_MULTI > SKIP :
 {
-  < tCOMENT : (~[ "." ]) >
-  {
-    System.out.println("COMENTARIO (Valor: " + matchedToken + ")");
-  }
+  "%%" : DEFAULT
+}
+
+< COMENT_MULTI > MORE :
+{
+  < ~[] >
 }
 
 TOKEN : /* PALABRAS RESERVADAS */

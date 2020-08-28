@@ -1,4 +1,4 @@
-package ClasesJava;
+package clasesJava;
 
 public class RegistroExpr {
     public Integer valorEnt = null;

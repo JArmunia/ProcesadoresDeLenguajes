@@ -1,5 +1,5 @@
-import ClasesJava.Simbolo;
-import ClasesJava.Tipo_variable;
+import clasesJava.Simbolo;
+import clasesJava.Tipo_variable;
 
 public class ExcepcionTipo extends SemanticException {
 

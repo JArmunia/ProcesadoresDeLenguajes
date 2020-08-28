@@ -1,4 +1,4 @@
-package ClasesJava;
+package clasesJava;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +16,9 @@ public class Simbolo {
     private boolean visible;
     private ArrayList<Simbolo> lista_parametros;
     private long direccion;
+    
+    //TODO: Boolean isvector;
+    // int len;
 
     public Simbolo(String nombre, Tipo_simbolo tipo, Tipo_variable variable, Clase_parametro c_parametro, int nivel,
 	    boolean visible, ArrayList<Simbolo> lista_parametros, long direccion) {

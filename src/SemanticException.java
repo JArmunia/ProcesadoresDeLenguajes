@@ -1,4 +1,4 @@
-import ClasesJava.Simbolo;
+import clasesJava.Simbolo;
 
 public class SemanticException extends Exception {
 

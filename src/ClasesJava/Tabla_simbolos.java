@@ -1,4 +1,4 @@
-package ClasesJava;
+package clasesJava;
 
 import java.util.ArrayList;
 import java.util.Collections;
