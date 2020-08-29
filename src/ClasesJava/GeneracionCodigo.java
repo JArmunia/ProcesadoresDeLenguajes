@@ -48,7 +48,7 @@ public class GeneracionCodigo {
 	if (!line.startsWith(";")) {
 	    line = "    " + line;
 	}
-	System.out.println(line);
+	//System.out.println(line);
 	sb.append(line + "\n");
     }
     

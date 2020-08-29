@@ -15,13 +15,14 @@ public class Simbolo {
     private int nivel;
     private boolean visible;
     private ArrayList<Simbolo> lista_parametros;
-    private long direccion;
-    
-    //TODO: Boolean isvector;
-    // int len;
+    private Long direccion;
+    private String etiqueta;
+
+    private Boolean isVector = false;
+    private Integer longitud = 1;
 
     public Simbolo(String nombre, Tipo_simbolo tipo, Tipo_variable variable, Clase_parametro c_parametro, int nivel,
-	    boolean visible, ArrayList<Simbolo> lista_parametros, long direccion) {
+	    boolean visible, ArrayList<Simbolo> lista_parametros, long direccion, String etiqueta) {
 	this.nombre = nombre;
 	this.nivel = nivel;
 	this.visible = visible;
@@ -30,6 +31,7 @@ public class Simbolo {
 	this.tipo = tipo;
 	this.variable = variable;
 	this.parametro = c_parametro;
+	this.etiqueta = etiqueta;
     }
 
     /**
@@ -40,7 +42,7 @@ public class Simbolo {
      * @return
      */
     public static Simbolo programa(String nombre, long direccion) {
-	return new Simbolo(nombre, Tipo_simbolo.PROGRAMA, null, null, 0, true, null, direccion);
+	return new Simbolo(nombre, Tipo_simbolo.PROGRAMA, null, null, 0, true, null, direccion, null);
     }
 
     /**
@@ -53,8 +55,7 @@ public class Simbolo {
      * @return
      */
     public static Simbolo variable(String nombre, Tipo_variable variable, int nivel, long direccion) {
-	return new Simbolo(nombre, Tipo_simbolo.VARIABLE, variable, null, nivel, true, null,
-		direccion);
+	return new Simbolo(nombre, Tipo_simbolo.VARIABLE, variable, null, nivel, true, null, direccion, null);
     }
 
     /**
@@ -65,8 +66,9 @@ public class Simbolo {
      * @param direccion
      * @return
      */
-    public static Simbolo accion(String nombre, int nivel, long direccion) {
-	return new Simbolo(nombre, Tipo_simbolo.ACCION, null, null, nivel, true,  new ArrayList<Simbolo>(), direccion);
+    public static Simbolo accion(String nombre, int nivel, String etiqueta) {
+	return new Simbolo(nombre, Tipo_simbolo.ACCION, null, null, nivel, true, new ArrayList<Simbolo>(), -1,
+		etiqueta);
     }
 
     /**
@@ -81,11 +83,9 @@ public class Simbolo {
      */
     public static Simbolo parametro(String nombre, Tipo_variable variable, Clase_parametro c_parametro, int nivel,
 	    long direccion) {
-	return new Simbolo(nombre, Tipo_simbolo.PARAMETRO, variable, c_parametro, nivel, true, null, direccion);
+	return new Simbolo(nombre, Tipo_simbolo.PARAMETRO, variable, c_parametro, nivel, true, null, direccion, null);
     }
 
-    
-    
     /**
      * Introduce un parámetro en el símbolo
      */
@@ -157,6 +157,10 @@ public class Simbolo {
 	this.direccion = dir;
     }
 
+    public String getEtiqueta() {
+	return etiqueta;
+    }
+
     public boolean esVariable() {
 	return this.tipo.equals(Tipo_simbolo.VARIABLE);
     }
@@ -172,11 +176,11 @@ public class Simbolo {
     public boolean esParametro() {
 	return this.tipo.equals(Tipo_simbolo.PARAMETRO);
     }
-    
+
     public boolean esValor() {
 	return this.parametro.equals(Clase_parametro.VAL);
     }
-    
+
     public boolean esReferencia() {
 	return this.parametro.equals(Clase_parametro.REF);
     }
@@ -208,30 +212,46 @@ public class Simbolo {
     public boolean esCadena() {
 	return this.variable.equals(Tipo_variable.CADENA);
     }
-    
+
+    public boolean esVector() {
+	return isVector;
+    }
+
+    public void setVector(Boolean isvec) {
+	isVector = isvec;
+    }
+
+    public void setLongitud(int longitud) {
+	this.longitud = longitud;
+    }
+
+    public int getLongitud() {
+	return longitud;
+    }
+
     @Override
     public String toString() {
 	String str = null;
-        switch(tipo) {
-        case PROGRAMA:
-            str = "Pr: " + nombre + ":" + nivel;
-            break;
+	switch (tipo) {
+	case PROGRAMA:
+	    str = "Pr: " + nombre + ":" + nivel;
+	    break;
 	case ACCION:
-	    
-	    str = "Acc: " + nombre + ":" + nivel + "(" + lista_parametros.stream()
-	    	.map(Object::toString).collect(Collectors.joining(", ")) + ")";
+
+	    str = "Acc: " + nombre + ":" + nivel + "("
+		    + lista_parametros.stream().map(Object::toString).collect(Collectors.joining(", ")) + ")";
 	    break;
 	case PARAMETRO:
-	    str = "Par: " + parametro + " " + variable + " " + nombre + ":" + nivel ;
+	    str = "Par: " + parametro + " " + variable + " " + nombre + ":" + nivel;
 	    break;
 	case VARIABLE:
-	    str = "Var: "+ parametro + " " + variable + " " + nombre  + ":" + nivel; 
+	    str = "Var: " + parametro + " " + variable + " " + nombre + ":" + nivel;
 	    break;
 	default:
 	    break;
-            
-        }
-        return str;
+
+	}
+	return str;
     }
 
 }

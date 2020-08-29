@@ -53,9 +53,8 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     }
     catch (ParseException e)
     {
-      System.err.println("Desde parse exception");
       System.err.println(e.getMessage());
-      //e.printStackTrace();
+      e.printStackTrace();
       //MiniLenguaje.ReInit(System.in);
     }
     catch (Error e)
@@ -93,6 +92,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
   private static void error_sintactico(ParseException e)
   {
     System.err.println("ERROR SINTACTICO: " + e.getMessage());
+    e.printStackTrace();
     generacion_codigo.pararGeneracionCodigo();
     getNextToken();
   }
@@ -188,15 +188,26 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 // tipo_variables() identificadores()
   static final public void declaracion() throws ParseException {
   Tipo_variable tipo;
-  ArrayList < String > identificadores;
+  ArrayList < RegistroIdentificador > identificadores;
+  Simbolo s;
     try {
       tipo = tipo_variables();
       identificadores = identificadores();
-      for (String identificador : identificadores)
+      for (RegistroIdentificador identificador : identificadores)
       {
-        if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, dir++) == null)
+        s = tabla_simbolos.introducir_variable(identificador.nombre, tipo, nivel, dir);
+        if (s == null)
         {
-          error_semantico(new ExcepcionTablaSimbolos(identificador, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador)));
+          error_semantico(new ExcepcionTablaSimbolos(identificador.nombre, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador.nombre)));
+        }
+        else
+        {
+          if (identificador.isVector)
+          {
+            s.setVector(true);
+            s.setLongitud(identificador.size);
+          }
+          dir = dir + s.getLongitud();
         }
       }
     } catch (ParseException e) {
@@ -232,11 +243,26 @@ public class MiniLenguaje implements MiniLenguajeConstants {
   }
 
 // <tIDENTIFICADOR>(<tCOMA><tIDENTIFICADOR>)*
-  static final public ArrayList < String > identificadores() throws ParseException {
-  ArrayList < String > identificadores = new ArrayList();
+  static final public ArrayList < RegistroIdentificador > identificadores() throws ParseException {
+  ArrayList < RegistroIdentificador > identificadores = new ArrayList();
+  Token t, size;
+  RegistroIdentificador regId;
     try {
-      jj_consume_token(tIDENTIFICADOR);
-      identificadores.add(token.image);
+      t = jj_consume_token(tIDENTIFICADOR);
+      regId = new RegistroIdentificador(t.image);
+      identificadores.add(regId);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tCORCHETE_IZQ:
+        jj_consume_token(tCORCHETE_IZQ);
+        size = jj_consume_token(tVALOR_ENTERO);
+        jj_consume_token(tCORCHETE_DCHA);
+      regId.size = Integer.parseInt(size.image);
+      regId.isVector = true;
+        break;
+      default:
+        jj_la1[2] = jj_gen;
+        ;
+      }
       label_2:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -244,12 +270,25 @@ public class MiniLenguaje implements MiniLenguajeConstants {
           ;
           break;
         default:
-          jj_la1[2] = jj_gen;
+          jj_la1[3] = jj_gen;
           break label_2;
         }
         jj_consume_token(tCOMA);
-        jj_consume_token(tIDENTIFICADOR);
-      identificadores.add(token.image);
+        t = jj_consume_token(tIDENTIFICADOR);
+      regId = new RegistroIdentificador(t.image);
+      identificadores.add(regId);
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tCORCHETE_IZQ:
+          jj_consume_token(tCORCHETE_IZQ);
+          size = jj_consume_token(tVALOR_ENTERO);
+          jj_consume_token(tCORCHETE_DCHA);
+      regId.size = Integer.parseInt(size.image);
+      regId.isVector = true;
+          break;
+        default:
+          jj_la1[4] = jj_gen;
+          ;
+        }
       }
       {if (true) return identificadores;}
     } catch (ParseException e) {
@@ -268,7 +307,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         ;
         break;
       default:
-        jj_la1[3] = jj_gen;
+        jj_la1[5] = jj_gen;
         break label_3;
       }
       try {
@@ -284,11 +323,10 @@ public class MiniLenguaje implements MiniLenguajeConstants {
   static final public void declaracion_accion() throws ParseException {
   int dir_prev = dir;
   dir = DIR_INICIAL;
-  String etiq;
+  String etiq = generacion_codigo.getEtiqueta();
   Token t;
     try {
-      t = cabecera_accion();
-      etiq = generacion_codigo.getEtiqueta();
+      t = cabecera_accion(etiq);
       generacion_codigo.escribir("JMP " + etiq);
       jj_consume_token(tFIN_SENTENCIA);
       declaracion_variables();
@@ -298,13 +336,14 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       bloque_sentencias();
       generacion_codigo.escribir("CSF ");
       generacion_codigo.escribir("; Fin accion " + t.image);
+      dir = dir_prev;
     } catch (ParseException e) {
     error_sintactico(e);
     }
   }
 
 // <tACCION> <tIDENTIFICADOR> parametros_formales()
-  static final public Token cabecera_accion() throws ParseException {
+  static final public Token cabecera_accion(String etiqueta) throws ParseException {
   ArrayList < Simbolo > parametros;
   Simbolo accion, s;
   Boolean buscarParametros = true;
@@ -313,7 +352,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       jj_consume_token(tACCION);
       t = jj_consume_token(tIDENTIFICADOR);
       generacion_codigo.escribir("; Declaraciones accion " + t.image);
-      accion = tabla_simbolos.introducir_accion(t.image, nivel, dir);
+      accion = tabla_simbolos.introducir_accion(t.image, nivel, etiqueta);
       if (accion == null)
       {
         error_semantico(new ExcepcionTablaSimbolos(t, nivel, tabla_simbolos.buscar_simbolo(token.image)));
@@ -361,7 +400,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
             ;
             break;
           default:
-            jj_la1[4] = jj_gen;
+            jj_la1[6] = jj_gen;
             break label_4;
           }
           jj_consume_token(tFIN_SENTENCIA);
@@ -371,7 +410,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         jj_consume_token(tPARENTESIS_DCHA);
         break;
       default:
-        jj_la1[5] = jj_gen;
+        jj_la1[7] = jj_gen;
         ;
       }
       {if (true) return parametros;}
@@ -384,20 +423,26 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
 // expresion() (<tCOMA> expresion())*
   static final public ArrayList < Simbolo > lista_parametros(Clase_parametro clase, Tipo_variable tipo) throws ParseException {
-  ArrayList < String > identificadores;
+  ArrayList < RegistroIdentificador > identificadores;
   ArrayList < Simbolo > parametros = new ArrayList();
   Simbolo parametro;
     try {
       identificadores = identificadores();
-      for (String identificador : identificadores)
+      for (RegistroIdentificador identificador : identificadores)
       {
-        parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, dir++);
+        parametro = tabla_simbolos.introducir_parametro(identificador.nombre, tipo, clase, nivel, dir);
+        if (identificador.isVector)
+        {
+          parametro.setVector(true);
+          parametro.setLongitud(identificador.size);
+        }
         if (parametro == null)
         {
-          error_semantico(new ExcepcionTablaSimbolos(identificador, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador)));
+          error_semantico(new ExcepcionTablaSimbolos(identificador.nombre, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador.nombre)));
         }
         else
         {
+          dir = dir + parametro.getLongitud();
           parametros.add(parametro);
         }
       }
@@ -438,7 +483,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     {if (true) return Clase_parametro.REF;}
       break;
     default:
-      jj_la1[6] = jj_gen;
+      jj_la1[8] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -465,7 +510,6 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
     } catch (ParseException e) {
     error_sintactico(e);
-    lista_sentencias();
     }
   }
 
@@ -487,7 +531,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         ;
         break;
       default:
-        jj_la1[7] = jj_gen;
+        jj_la1[9] = jj_gen;
         break label_5;
       }
     }
@@ -516,9 +560,11 @@ leer()  < tFIN_SENTENCIA >|
         identificador = jj_consume_token(tIDENTIFICADOR);
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case tPARENTESIS_IZQ:
+        case tCORCHETE_IZQ:
         case tOPAS:
         case tFIN_SENTENCIA:
           switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+          case tCORCHETE_IZQ:
           case tOPAS:
             asignacion(identificador);
             break;
@@ -527,13 +573,13 @@ leer()  < tFIN_SENTENCIA >|
             invocacion_accion(identificador);
             break;
           default:
-            jj_la1[8] = jj_gen;
+            jj_la1[10] = jj_gen;
             jj_consume_token(-1);
             throw new ParseException();
           }
           break;
         default:
-          jj_la1[9] = jj_gen;
+          jj_la1[11] = jj_gen;
           ;
         }
         break;
@@ -544,7 +590,7 @@ leer()  < tFIN_SENTENCIA >|
         mientras_que();
         break;
       default:
-        jj_la1[10] = jj_gen;
+        jj_la1[12] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -622,7 +668,7 @@ leer()  < tFIN_SENTENCIA >|
           ;
           break;
         default:
-          jj_la1[11] = jj_gen;
+          jj_la1[13] = jj_gen;
           break label_6;
         }
         jj_consume_token(tCOMA);
@@ -674,7 +720,7 @@ leer()  < tFIN_SENTENCIA >|
       case tCHAR:
       case tIDENTIFICADOR:
       case tVALOR_ENTERO:
-        r = expresion();
+        r = expresion(Clase_parametro.VAL);
       if (r.tipo == Tipo_variable.BOOLEANO && r.valorBool != null)
       {
         if (r.valorBool)
@@ -721,7 +767,7 @@ leer()  < tFIN_SENTENCIA >|
       }
         break;
       default:
-        jj_la1[12] = jj_gen;
+        jj_la1[14] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -732,7 +778,7 @@ leer()  < tFIN_SENTENCIA >|
           ;
           break;
         default:
-          jj_la1[13] = jj_gen;
+          jj_la1[15] = jj_gen;
           break label_7;
         }
         jj_consume_token(tCOMA);
@@ -747,7 +793,7 @@ leer()  < tFIN_SENTENCIA >|
         case tCHAR:
         case tIDENTIFICADOR:
         case tVALOR_ENTERO:
-          r = expresion();
+          r = expresion(Clase_parametro.VAL);
       if (r.tipo == Tipo_variable.BOOLEANO && r.valorBool != null)
       {
         if (r.valorBool)
@@ -794,7 +840,7 @@ leer()  < tFIN_SENTENCIA >|
       }
           break;
         default:
-          jj_la1[14] = jj_gen;
+          jj_la1[16] = jj_gen;
           jj_consume_token(-1);
           throw new ParseException();
         }
@@ -810,7 +856,7 @@ leer()  < tFIN_SENTENCIA >|
 // <tOPAS> expresion() 
   static final public void asignacion(Token t) throws ParseException {
   Simbolo s;
-  RegistroExpr r;
+  RegistroExpr r, rVec;
   Tipo_variable tipoID;
     try {
       s = tabla_simbolos.buscar_simbolo(t.image);
@@ -838,8 +884,39 @@ leer()  < tFIN_SENTENCIA >|
           generacion_codigo.escribir("DRF");
         }
       }
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tCORCHETE_IZQ:
+        jj_consume_token(tCORCHETE_IZQ);
+        rVec = expresion(Clase_parametro.VAL);
+        jj_consume_token(tCORCHETE_DCHA);
+      if (rVec.tipo != Tipo_variable.DESCONOCIDO && rVec.tipo != Tipo_variable.ENTERO)
+      {
+        error_semantico("El tipo del indice del vector debe ser entero");
+      }
+      else if (rVec.tipo == Tipo_variable.ENTERO && rVec.valorEnt != null)
+      {
+        if (rVec.valorEnt >= Math.pow(2, 8) || rVec.valorEnt < - Math.pow(2, 8))
+        {
+          error_semantico("Overflow en el indice del vector");
+        }
+        if (rVec.valorEnt < 0)
+        {
+          error_semantico("El indice del vector debe ser positivo");
+        }
+        if (rVec.valorEnt >= s.getLongitud())
+        {
+          error_semantico("Se ha intentado acceder a una posicion mayor que la longitud del vector, posicion: "
+          + rVec.valorEnt + " longitud: " + s.getLongitud());
+        }
+      }
+      generacion_codigo.escribir("PLUS");
+        break;
+      default:
+        jj_la1[17] = jj_gen;
+        ;
+      }
       jj_consume_token(tOPAS);
-      r = expresion();
+      r = expresion(Clase_parametro.VAL);
       if ((tipoID != Tipo_variable.DESCONOCIDO) && (r.tipo != Tipo_variable.DESCONOCIDO) && (tipoID != r.tipo))
       {
         error_semantico("Tipos incompatibles en la asignacion");
@@ -857,27 +934,27 @@ leer()  < tFIN_SENTENCIA >|
   ArrayList < RegistroExpr > args = new ArrayList();
   RegistroExpr param;
     try {
-      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-      case tPARENTESIS_IZQ:
-        args = argumentos();
-        break;
-      default:
-        jj_la1[15] = jj_gen;
-        ;
-      }
-      jj_consume_token(tFIN_SENTENCIA);
       accion = tabla_simbolos.buscar_simbolo(t.image);
       if (accion == null)
       {
         error_semantico("Identificador de accion desconocido: " + t.image);
-        accion = tabla_simbolos.introducir_accion(t.image, nivel, TBD);
+        accion = tabla_simbolos.introducir_accion(t.image, nivel, null);
         accion.setVariable(Tipo_variable.DESCONOCIDO);
       }
       else if (!accion.esAccion())
       {
         error_semantico(t.image + " no es una accion");
       }
-      else if (accion.getVariable() != Tipo_variable.DESCONOCIDO)
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case tPARENTESIS_IZQ:
+        args = argumentos(accion.getListaParametros());
+        break;
+      default:
+        jj_la1[18] = jj_gen;
+        ;
+      }
+      jj_consume_token(tFIN_SENTENCIA);
+      if (accion.getVariable() != Tipo_variable.DESCONOCIDO)
       {
         if (args.size() != accion.getListaParametros().size())
         {
@@ -904,12 +981,13 @@ leer()  < tFIN_SENTENCIA >|
             && param.parametro != Clase_parametro.REF)
             {
               error_semantico("El parametro en la posicion " + i +
-              " deberia ser un parametro por referencia, pero se ha pasado un parametro por valor" + " en la accion " + accion.getNombre());
-              System.out.println(tabla_simbolos);
+              " deberia ser un parametro por referencia, pero se ha pasado un parametro por valor" +
+              " en la accion " + accion.getNombre());
             }
           }
         }
-        generacion_codigo.escribir("OSF " + (dir - 1) + " " + (nivel - accion.getNivel()) + " L" + accion.getDireccion());
+        generacion_codigo.escribir("; Invocacion accion " + accion.getNombre());
+        generacion_codigo.escribir("OSF " + (dir - 1) + " " + (nivel - accion.getNivel()) + " " + accion.getEtiqueta());
       }
     } catch (ParseException e) {
     error_sintactico(e);
@@ -924,7 +1002,7 @@ leer()  < tFIN_SENTENCIA >|
       jj_consume_token(tMQ);
       etiqMQ = generacion_codigo.getEtiqueta();
       generacion_codigo.escribir(etiqMQ + ":");
-      r = expresion();
+      r = expresion(Clase_parametro.VAL);
       etiqFin = generacion_codigo.getEtiqueta();
       generacion_codigo.escribir("; Mq");
       generacion_codigo.escribir("JMF " + etiqFin);
@@ -959,7 +1037,7 @@ leer()  < tFIN_SENTENCIA >|
   String etiqSINO, etiqFin;
     try {
       jj_consume_token(tSI);
-      r = expresion();
+      r = expresion(Clase_parametro.VAL);
       etiqSINO = generacion_codigo.getEtiqueta();
       generacion_codigo.escribir("; Si");
       generacion_codigo.escribir("JMF " + etiqSINO);
@@ -990,7 +1068,7 @@ leer()  < tFIN_SENTENCIA >|
         lista_sentencias();
         break;
       default:
-        jj_la1[16] = jj_gen;
+        jj_la1[19] = jj_gen;
         ;
       }
       jj_consume_token(tFSI);
@@ -1002,7 +1080,7 @@ leer()  < tFIN_SENTENCIA >|
   }
 
 // <tPARENTESIS_IZQ> (lista_expresiones())? <tPARENTESIS_DCHA>
-  static final public ArrayList < RegistroExpr > argumentos() throws ParseException {
+  static final public ArrayList < RegistroExpr > argumentos(ArrayList < Simbolo > parametros_accion) throws ParseException {
   ArrayList < RegistroExpr > args = new ArrayList();
     try {
       jj_consume_token(tPARENTESIS_IZQ);
@@ -1017,10 +1095,10 @@ leer()  < tFIN_SENTENCIA >|
       case tCHAR:
       case tIDENTIFICADOR:
       case tVALOR_ENTERO:
-        args = lista_expresiones();
+        args = lista_expresiones(parametros_accion);
         break;
       default:
-        jj_la1[17] = jj_gen;
+        jj_la1[20] = jj_gen;
         ;
       }
       jj_consume_token(tPARENTESIS_DCHA);
@@ -1033,11 +1111,18 @@ leer()  < tFIN_SENTENCIA >|
   }
 
 // expresion() (<tCOMA> expresion())*
-  static final public ArrayList < RegistroExpr > lista_expresiones() throws ParseException {
+  static final public ArrayList < RegistroExpr > lista_expresiones(ArrayList < Simbolo > parametros_accion) throws ParseException {
   ArrayList < RegistroExpr > args = new ArrayList();
   RegistroExpr r;
+  Clase_parametro param = null;
+  int i = 0;
     try {
-      r = expresion();
+      if (i < parametros_accion.size())
+      {
+        param = parametros_accion.get(i).getParametro();
+        i++;
+      }
+      r = expresion(param);
       args.add(r);
       label_8:
       while (true) {
@@ -1046,11 +1131,20 @@ leer()  < tFIN_SENTENCIA >|
           ;
           break;
         default:
-          jj_la1[18] = jj_gen;
+          jj_la1[21] = jj_gen;
           break label_8;
         }
         jj_consume_token(tCOMA);
-        r = expresion();
+      if (i < parametros_accion.size())
+      {
+        param = parametros_accion.get(i).getParametro();
+        i++;
+      }
+      else
+      {
+        param = null;
+      }
+        r = expresion(param);
       args.add(r);
       }
       {if (true) return args;}
@@ -1062,12 +1156,12 @@ leer()  < tFIN_SENTENCIA >|
   }
 
 // expresion_simple() (operador_relacional() expresion_simple())*
-  static final public RegistroExpr expresion() throws ParseException {
+  static final public RegistroExpr expresion(Clase_parametro param) throws ParseException {
   RegistroExpr r1, r2;
   Token token_operador;
   String operador;
     try {
-      r1 = expresion_simple();
+      r1 = expresion_simple(param);
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case tIGUAL:
       case tMAI:
@@ -1076,7 +1170,7 @@ leer()  < tFIN_SENTENCIA >|
       case tMAYOR:
       case tMENOR:
         token_operador = operador_relacional();
-        r2 = expresion_simple();
+        r2 = expresion_simple(param);
       operador = token_operador.image;
       r1 = comprobacionExpresion(r1, r2, operador);
       switch (operador)
@@ -1102,7 +1196,7 @@ leer()  < tFIN_SENTENCIA >|
       }
         break;
       default:
-        jj_la1[19] = jj_gen;
+        jj_la1[22] = jj_gen;
         ;
       }
       //System.out.println(r1);
@@ -1142,7 +1236,7 @@ leer()  < tFIN_SENTENCIA >|
     {if (true) return t;}
       break;
     default:
-      jj_la1[20] = jj_gen;
+      jj_la1[23] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -1150,13 +1244,13 @@ leer()  < tFIN_SENTENCIA >|
   }
 
 // termino() (operador_aditivo() termino())*
-  static final public RegistroExpr expresion_simple() throws ParseException {
+  static final public RegistroExpr expresion_simple(Clase_parametro param) throws ParseException {
   RegistroExpr r1 = new RegistroExpr();
   RegistroExpr r2 = new RegistroExpr();
   Token token_operador;
   String operador;
     try {
-      r1 = termino();
+      r1 = termino(param);
       label_9:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -1166,11 +1260,11 @@ leer()  < tFIN_SENTENCIA >|
           ;
           break;
         default:
-          jj_la1[21] = jj_gen;
+          jj_la1[24] = jj_gen;
           break label_9;
         }
         token_operador = operador_aditivo();
-        r2 = termino();
+        r2 = termino(param);
       operador = token_operador.image;
       switch (operador)
       {
@@ -1184,7 +1278,7 @@ leer()  < tFIN_SENTENCIA >|
         else
         {
           r1 = new RegistroExpr(r1, r2, operador);
-          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 16) || r1.valorEnt < (- Math.pow(2, 16))))
+          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 8) || r1.valorEnt < (- Math.pow(2, 8))))
           {
             error_semantico("Error de overflow/underflow al realizar la suma.");
             r1.valorEnt = null;
@@ -1202,7 +1296,7 @@ leer()  < tFIN_SENTENCIA >|
         else
         {
           r1 = new RegistroExpr(r1, r2, operador);
-          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 16) || r1.valorEnt < (- Math.pow(2, 16))))
+          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 8) || r1.valorEnt < (- Math.pow(2, 8))))
           {
             error_semantico("Error de overflow/underflow al realizar la resta.");
             r1.valorEnt = null;
@@ -1250,7 +1344,7 @@ leer()  < tFIN_SENTENCIA >|
     {if (true) return t;}
       break;
     default:
-      jj_la1[22] = jj_gen;
+      jj_la1[25] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -1258,12 +1352,13 @@ leer()  < tFIN_SENTENCIA >|
   }
 
 // factor() (operador_multiplicativo() factor())* 
-  static final public RegistroExpr termino() throws ParseException {
+  static final public RegistroExpr termino(Clase_parametro param) throws ParseException {
   RegistroExpr r1 = new RegistroExpr(), r2 = new RegistroExpr();
   Token token_operador;
   String operador;
     try {
-      r1 = factor();
+      r1 = factor(param);
+
       label_10:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -1274,11 +1369,19 @@ leer()  < tFIN_SENTENCIA >|
           ;
           break;
         default:
-          jj_la1[23] = jj_gen;
+          jj_la1[26] = jj_gen;
           break label_10;
         }
         token_operador = operador_multiplicativo();
-        r2 = factor();
+        r2 = factor(param);
+      if (r1.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
+      }
+      if (r2.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
+      }
       operador = token_operador.image;
       switch (operador)
       {
@@ -1292,7 +1395,7 @@ leer()  < tFIN_SENTENCIA >|
         else
         {
           r1 = new RegistroExpr(r1, r2, operador);
-          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 16) || r1.valorEnt < (- Math.pow(2, 16))))
+          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 8) || r1.valorEnt < (- Math.pow(2, 8))))
           {
             error_semantico("Error de overflow/underflow al realizar la multiplicacion.");
             r1.valorEnt = null;
@@ -1407,7 +1510,7 @@ leer()  < tFIN_SENTENCIA >|
     {if (true) return t;}
       break;
     default:
-      jj_la1[24] = jj_gen;
+      jj_la1[27] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -1427,15 +1530,16 @@ leer()  < tFIN_SENTENCIA >|
 | < tTRUE >
 | < tFALSE >
 */
-  static final public RegistroExpr factor() throws ParseException {
-  RegistroExpr rExpr = new RegistroExpr();
+  static final public RegistroExpr factor(Clase_parametro param) throws ParseException {
+  RegistroExpr rExpr = new RegistroExpr(), rVec = new RegistroExpr();
   Token t;
   Simbolo s;
+  Boolean indice_seleccionado = false;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case tMENOS:
         jj_consume_token(tMENOS);
-        rExpr = factor();
+        rExpr = factor(param);
       if ((rExpr.tipo != Tipo_variable.ENTERO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
       {
         error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.ENTERO));
@@ -1445,16 +1549,24 @@ leer()  < tFIN_SENTENCIA >|
       {
         rExpr.valorEnt = - rExpr.valorEnt;
       }
+      if (rExpr.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
+      }
       generacion_codigo.escribir("NGI");
       {if (true) return rExpr;}
         break;
       case tNOT:
         jj_consume_token(tNOT);
-        rExpr = factor();
+        rExpr = factor(param);
       if ((rExpr.tipo != Tipo_variable.BOOLEANO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
       {
         error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.BOOLEANO));
         rExpr.tipo = Tipo_variable.BOOLEANO;
+      }
+      if (rExpr.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
       }
       if (rExpr.valorBool != null)
       {
@@ -1465,14 +1577,14 @@ leer()  < tFIN_SENTENCIA >|
         break;
       case tPARENTESIS_IZQ:
         jj_consume_token(tPARENTESIS_IZQ);
-        rExpr = expresion();
+        rExpr = expresion(param);
         jj_consume_token(tPARENTESIS_DCHA);
       {if (true) return rExpr;}
         break;
       case tENTACAR:
         jj_consume_token(tENTACAR);
         jj_consume_token(tPARENTESIS_IZQ);
-        rExpr = expresion();
+        rExpr = expresion(param);
         jj_consume_token(tPARENTESIS_DCHA);
       if ((rExpr.tipo != Tipo_variable.ENTERO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
       {
@@ -1482,17 +1594,25 @@ leer()  < tFIN_SENTENCIA >|
       {
         error_semantico("La expresion no se puede convertir en un caracter valido");
       }
+      if (rExpr.isVector)
+      {
+        error_semantico("No se puede transformar un vector a caracter");
+      }
       rExpr.tipo = Tipo_variable.CHAR;
       {if (true) return rExpr;}
         break;
       case tCARAENT:
         jj_consume_token(tCARAENT);
         jj_consume_token(tPARENTESIS_IZQ);
-        rExpr = expresion();
+        rExpr = expresion(param);
         jj_consume_token(tPARENTESIS_DCHA);
       if ((rExpr.tipo != Tipo_variable.CHAR) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
       {
         error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.CHAR));
+      }
+      if (rExpr.isVector)
+      {
+        error_semantico("No se puede transformar un vector a entero");
       }
       rExpr.tipo = Tipo_variable.ENTERO;
       {if (true) return rExpr;}
@@ -1516,6 +1636,45 @@ leer()  < tFIN_SENTENCIA >|
         generacion_codigo.escribir("; Variable " + t.image);
         generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + s.getDireccion());
         rExpr.tipo = s.getVariable();
+      }
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case tCORCHETE_IZQ:
+          jj_consume_token(tCORCHETE_IZQ);
+          rVec = expresion(Clase_parametro.VAL);
+          jj_consume_token(tCORCHETE_DCHA);
+      if (!s.esVector())
+      {
+        error_semantico("El simbolo " + s.getNombre() + " no es un vector");
+      }
+      else if (rVec.tipo != Tipo_variable.DESCONOCIDO && rVec.tipo != Tipo_variable.ENTERO)
+      {
+        error_semantico("El tipo del indice del vector debe ser entero");
+      }
+      else if (rVec.tipo == Tipo_variable.ENTERO && rVec.valorEnt != null)
+      {
+        if (rVec.valorEnt >= Math.pow(2, 8) || rVec.valorEnt < - Math.pow(2, 8))
+        {
+          error_semantico("Overflow en el indice del vector");
+        }
+        if (rVec.valorEnt < 0)
+        {
+          error_semantico("El indice del vector debe ser positivo");
+        }
+        if (rVec.valorEnt >= s.getLongitud())
+        {
+          error_semantico("Se ha intentado acceder a una posicion mayor que la longitud del vector, posicion: "
+          + rVec.valorEnt + " longitud: " + s.getLongitud());
+        }
+      }
+      indice_seleccionado = true;
+      generacion_codigo.escribir("PLUS");
+          break;
+        default:
+          jj_la1[28] = jj_gen;
+          ;
+        }
+      if (s != null)
+      {
         if (s.esParametro())
         {
           rExpr.parametro = s.getParametro();
@@ -1524,13 +1683,17 @@ leer()  < tFIN_SENTENCIA >|
             generacion_codigo.escribir("DRF");
           }
         }
-        if (s.esValor())
+        if (param != null && param == Clase_parametro.VAL)
         {
           generacion_codigo.escribir("DRF");
         }
-        else if (s.esVariable())
+        if (s.esVariable())
         {
           rExpr.parametro = Clase_parametro.REF;
+        }
+        if (s.esVector() && !indice_seleccionado)
+        {
+          rExpr.isVector = true;
         }
       }
       {if (true) return rExpr;}
@@ -1568,7 +1731,7 @@ leer()  < tFIN_SENTENCIA >|
       {if (true) return rExpr;}
         break;
       default:
-        jj_la1[25] = jj_gen;
+        jj_la1[29] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -1589,7 +1752,7 @@ leer()  < tFIN_SENTENCIA >|
   static public Token jj_nt;
   static private int jj_ntk;
   static private int jj_gen;
-  static final private int[] jj_la1 = new int[26];
+  static final private int[] jj_la1 = new int[30];
   static private int[] jj_la1_0;
   static private int[] jj_la1_1;
   static private int[] jj_la1_2;
@@ -1599,13 +1762,13 @@ leer()  < tFIN_SENTENCIA >|
       jj_la1_init_2();
    }
    private static void jj_la1_init_0() {
-      jj_la1_0 = new int[] {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xd100000,0x0,0x0,0xd100000,0x0,0xe0020000,0x0,0xe0020000,0x0,0x400000,0xe0020000,0x0,0x0,0x0,0x10000,0x10000,0x10008000,0x10008000,0xe0020000,};
+      jj_la1_0 = new int[] {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xd100000,0x0,0x0,0xd100000,0x0,0xe0020000,0x0,0xe0020000,0x0,0x0,0x400000,0xe0020000,0x0,0x0,0x0,0x10000,0x10000,0x10008000,0x10008000,0x0,0xe0020000,};
    }
    private static void jj_la1_init_1() {
-      jj_la1_1 = new int[] {0xf0,0xf0,0x20000,0x2,0x10000,0x400,0xc,0x80000000,0x14400,0x14400,0x80000000,0x20000,0xe0080401,0x20000,0xe0080401,0x400,0x0,0xa0080401,0x20000,0x7c08000,0x7c08000,0xc0000,0xc0000,0x300000,0x300000,0xa0080401,};
+      jj_la1_1 = new int[] {0xf0,0xf0,0x1000,0x20000,0x1000,0x2,0x10000,0x400,0xc,0x80000000,0x15400,0x15400,0x80000000,0x20000,0xe0080401,0x20000,0xe0080401,0x1000,0x400,0x0,0xa0080401,0x20000,0x7c08000,0x7c08000,0xc0000,0xc0000,0x300000,0x300000,0x1000,0xa0080401,};
    }
    private static void jj_la1_init_2() {
-      jj_la1_2 = new int[] {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,0x0,0x1,0x0,0x0,0x1,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,};
+      jj_la1_2 = new int[] {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,0x0,0x1,0x0,0x0,0x0,0x1,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,};
    }
 
   /** Constructor with InputStream. */
@@ -1626,7 +1789,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 30; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -1640,7 +1803,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 30; i++) jj_la1[i] = -1;
   }
 
   /** Constructor. */
@@ -1657,7 +1820,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 30; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -1667,7 +1830,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 30; i++) jj_la1[i] = -1;
   }
 
   /** Constructor with generated Token Manager. */
@@ -1683,7 +1846,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 30; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -1692,7 +1855,7 @@ leer()  < tFIN_SENTENCIA >|
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 26; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 30; i++) jj_la1[i] = -1;
   }
 
   static private Token jj_consume_token(int kind) throws ParseException {
@@ -1748,7 +1911,7 @@ leer()  < tFIN_SENTENCIA >|
       la1tokens[jj_kind] = true;
       jj_kind = -1;
     }
-    for (int i = 0; i < 26; i++) {
+    for (int i = 0; i < 30; i++) {
       if (jj_la1[i] == jj_gen) {
         for (int j = 0; j < 32; j++) {
           if ((jj_la1_0[i] & (1<<j)) != 0) {

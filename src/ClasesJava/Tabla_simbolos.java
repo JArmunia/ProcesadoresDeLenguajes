@@ -138,11 +138,11 @@ public class Tabla_simbolos {
      * @param dir
      * @return
      */
-    public Simbolo introducir_accion(String nombre, int nivel, long dir) {
+    public Simbolo introducir_accion(String nombre, int nivel, String etiqueta) {
 	Simbolo accion = null;
 	if (!esta(nombre, nivel)) {
 
-	    accion = Simbolo.accion(nombre, nivel, dir);
+	    accion = Simbolo.accion(nombre, nivel, etiqueta);
 	    introducir(accion);
 	}
 	return accion;

@@ -66,9 +66,8 @@ public class MiniLenguaje
     }
     catch (ParseException e)
     {
-      System.err.println("Desde parse exception");
       System.err.println(e.getMessage());
-      //e.printStackTrace();
+      e.printStackTrace();
       //MiniLenguaje.ReInit(System.in);
     }
     catch (Error e)
@@ -106,6 +105,7 @@ public class MiniLenguaje
   private static void error_sintactico(ParseException e)
   {
     System.err.println("ERROR SINTACTICO: " + e.getMessage());
+    e.printStackTrace();
     generacion_codigo.pararGeneracionCodigo();
     getNextToken();
   }
@@ -500,7 +500,8 @@ void declaracion_variables() :
 void declaracion() :
 {
   Tipo_variable tipo;
-  ArrayList < String > identificadores;
+  ArrayList < RegistroIdentificador > identificadores;
+  Simbolo s;
 }
 {
   try
@@ -508,11 +509,21 @@ void declaracion() :
     tipo = tipo_variables() 
     identificadores = identificadores()
     {
-      for (String identificador : identificadores)
+      for (RegistroIdentificador identificador : identificadores)
       {
-        if (tabla_simbolos.introducir_variable(identificador, tipo, nivel, dir++) == null)
+        s = tabla_simbolos.introducir_variable(identificador.nombre, tipo, nivel, dir);
+        if (s == null)
         {
-          error_semantico(new ExcepcionTablaSimbolos(identificador, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador)));
+          error_semantico(new ExcepcionTablaSimbolos(identificador.nombre, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador.nombre)));
+        }
+        else
+        {
+          if (identificador.isVector)
+          {
+            s.setVector(true);
+            s.setLongitud(identificador.size);
+          }
+          dir = dir + s.getLongitud();
         }
       }
     }
@@ -546,22 +557,39 @@ Tipo_variable tipo_variables() :
 }
 
 // <tIDENTIFICADOR>(<tCOMA><tIDENTIFICADOR>)*
-ArrayList < String > identificadores() :
+ArrayList < RegistroIdentificador > identificadores() :
 {
-  ArrayList < String > identificadores = new ArrayList();
+  ArrayList < RegistroIdentificador > identificadores = new ArrayList();
+  Token t, size;
+  RegistroIdentificador regId;
 }
 {
   try
   {
-    < tIDENTIFICADOR >
+    t = < tIDENTIFICADOR >
     {
-      identificadores.add(token.image);
+      regId = new RegistroIdentificador(t.image);
+      identificadores.add(regId);
     }
+    (< tCORCHETE_IZQ > size = < tVALOR_ENTERO > < tCORCHETE_DCHA >
+    {
+      regId.size = Integer.parseInt(size.image);
+      regId.isVector = true;
+    }
+    ) ? 
     (
-    < tCOMA > < tIDENTIFICADOR >
+    < tCOMA > t = < tIDENTIFICADOR >
     {
-      identificadores.add(token.image);
+      regId = new RegistroIdentificador(t.image);
+      identificadores.add(regId);
     }
+    (< tCORCHETE_IZQ > size = <tVALOR_ENTERO > < tCORCHETE_DCHA >
+    {
+      regId.size = Integer.parseInt(size.image);
+      regId.isVector = true;
+    }
+    ) ?
+    // TODO: Poner tamaño en la tabla de simbolos
     ) *
     {
       return identificadores;
@@ -596,15 +624,14 @@ void declaracion_accion() :
 {
   int dir_prev = dir;
   dir = DIR_INICIAL;
-  String etiq;
+  String etiq = generacion_codigo.getEtiqueta();
   Token t;
 }
 {
   try
   {
-    t = cabecera_accion()
+    t = cabecera_accion(etiq)
     {
-      etiq = generacion_codigo.getEtiqueta();
       generacion_codigo.escribir("JMP " + etiq);
     }
     < tFIN_SENTENCIA > 
@@ -618,6 +645,7 @@ void declaracion_accion() :
     {
       generacion_codigo.escribir("CSF ");
       generacion_codigo.escribir("; Fin accion " + t.image);
+      dir = dir_prev;
     }
   }
   catch (ParseException e)
@@ -627,7 +655,7 @@ void declaracion_accion() :
 }
 
 // <tACCION> <tIDENTIFICADOR> parametros_formales()
-Token cabecera_accion() :
+Token cabecera_accion(String etiqueta) :
 {
   ArrayList < Simbolo > parametros;
   Simbolo accion, s;
@@ -640,7 +668,7 @@ Token cabecera_accion() :
     < tACCION > t = < tIDENTIFICADOR >
     {
       generacion_codigo.escribir("; Declaraciones accion " + t.image);
-      accion = tabla_simbolos.introducir_accion(t.image, nivel, dir);
+      accion = tabla_simbolos.introducir_accion(t.image, nivel, etiqueta);
       if (accion == null)
       {
         error_semantico(new ExcepcionTablaSimbolos(t, nivel, tabla_simbolos.buscar_simbolo(token.image)));
@@ -710,7 +738,7 @@ ArrayList < Simbolo > parametros_formales() :
 // expresion() (<tCOMA> expresion())*
 ArrayList < Simbolo > lista_parametros(Clase_parametro clase, Tipo_variable tipo) :
 {
-  ArrayList < String > identificadores;
+  ArrayList < RegistroIdentificador > identificadores;
   ArrayList < Simbolo > parametros = new ArrayList();
   Simbolo parametro;
 }
@@ -719,15 +747,21 @@ ArrayList < Simbolo > lista_parametros(Clase_parametro clase, Tipo_variable tipo
   {
     identificadores = identificadores()
     {
-      for (String identificador : identificadores)
+      for (RegistroIdentificador identificador : identificadores)
       {
-        parametro = tabla_simbolos.introducir_parametro(identificador, tipo, clase, nivel, dir++);
+        parametro = tabla_simbolos.introducir_parametro(identificador.nombre, tipo, clase, nivel, dir);
+        if (identificador.isVector)
+        {
+          parametro.setVector(true);
+          parametro.setLongitud(identificador.size);
+        }
         if (parametro == null)
         {
-          error_semantico(new ExcepcionTablaSimbolos(identificador, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador)));
+          error_semantico(new ExcepcionTablaSimbolos(identificador.nombre, token.beginLine, nivel, tabla_simbolos.buscar_simbolo(identificador.nombre)));
         }
         else
         {
+          dir = dir + parametro.getLongitud();
           parametros.add(parametro);
         }
       }
@@ -803,7 +837,6 @@ void bloque_sentencias() :
   catch (ParseException e)
   {
     error_sintactico(e);
-    lista_sentencias();
   }
 }
 
@@ -985,7 +1018,7 @@ ArrayList < RegistroExpr > lista_escribibles() :
   //TODO: Pasar registrosexpr con la cadena que representa a cada valor que se pasa
   try
   {
-    (r = expresion()
+    (r = expresion(Clase_parametro.VAL)
     {
       if (r.tipo == Tipo_variable.BOOLEANO && r.valorBool != null)
       {
@@ -1035,7 +1068,7 @@ ArrayList < RegistroExpr > lista_escribibles() :
     ) 
     (
     < tCOMA > 
-    (r = expresion()
+    (r = expresion(Clase_parametro.VAL)
     {
       if (r.tipo == Tipo_variable.BOOLEANO && r.valorBool != null)
       {
@@ -1099,7 +1132,7 @@ ArrayList < RegistroExpr > lista_escribibles() :
 void asignacion(Token t) :
 {
   Simbolo s;
-  RegistroExpr r;
+  RegistroExpr r, rVec;
   Tipo_variable tipoID;
 }
 {
@@ -1132,7 +1165,33 @@ void asignacion(Token t) :
         }
       }
     }
-    < tOPAS > r = expresion()
+    (< tCORCHETE_IZQ > rVec = expresion(Clase_parametro.VAL) < tCORCHETE_DCHA >
+    {
+      if (rVec.tipo != Tipo_variable.DESCONOCIDO && rVec.tipo != Tipo_variable.ENTERO)
+      {
+        error_semantico("El tipo del indice del vector debe ser entero");
+      }
+      else if (rVec.tipo == Tipo_variable.ENTERO && rVec.valorEnt != null)
+      {
+        if (rVec.valorEnt >= Math.pow(2, 8) || rVec.valorEnt < - Math.pow(2, 8))
+        {
+          error_semantico("Overflow en el indice del vector");
+        }
+        if (rVec.valorEnt < 0)
+        {
+          error_semantico("El indice del vector debe ser positivo");
+        }
+        if (rVec.valorEnt >= s.getLongitud())
+        {
+          error_semantico("Se ha intentado acceder a una posicion mayor que la longitud del vector, posicion: " 
+          + rVec.valorEnt + " longitud: " + s.getLongitud());
+        }
+      }
+      generacion_codigo.escribir("PLUS");
+    }
+    ) ? 
+    // TODO: Comprobar resultado entero (O desconocido), que el resultado no sea mayor que la longitud del vector
+    < tOPAS > r = expresion(Clase_parametro.VAL)
     {
       if ((tipoID != Tipo_variable.DESCONOCIDO) && (r.tipo != Tipo_variable.DESCONOCIDO) && (tipoID != r.tipo))
       {
@@ -1158,21 +1217,23 @@ void invocacion_accion(Token t) :
 {
   try
   {
-    (
-    args = argumentos()) ? < tFIN_SENTENCIA >
     {
       accion = tabla_simbolos.buscar_simbolo(t.image);
       if (accion == null)
       {
         error_semantico("Identificador de accion desconocido: " + t.image);
-        accion = tabla_simbolos.introducir_accion(t.image, nivel, TBD);
+        accion = tabla_simbolos.introducir_accion(t.image, nivel, null);
         accion.setVariable(Tipo_variable.DESCONOCIDO);			
       }
       else if (!accion.esAccion())
       {
         error_semantico(t.image + " no es una accion");
       }
-      else if (accion.getVariable() != Tipo_variable.DESCONOCIDO)
+    }
+    (
+    args = argumentos(accion.getListaParametros())) ? < tFIN_SENTENCIA >
+    {
+      if (accion.getVariable() != Tipo_variable.DESCONOCIDO)
       {
         if (args.size() != accion.getListaParametros().size())
         {
@@ -1199,12 +1260,13 @@ void invocacion_accion(Token t) :
             && param.parametro != Clase_parametro.REF)
             {
               error_semantico("El parametro en la posicion " + i + 
-              " deberia ser un parametro por referencia, pero se ha pasado un parametro por valor" + " en la accion " + accion.getNombre());
-              System.out.println(tabla_simbolos);
+              " deberia ser un parametro por referencia, pero se ha pasado un parametro por valor" + 
+              " en la accion " + accion.getNombre());
             }
           }
         }
-        generacion_codigo.escribir("OSF " + (dir - 1) + " " + (nivel - accion.getNivel()) + " L" + accion.getDireccion());
+        generacion_codigo.escribir("; Invocacion accion " + accion.getNombre());
+        generacion_codigo.escribir("OSF " + (dir - 1) + " " + (nivel - accion.getNivel()) + " " + accion.getEtiqueta());
       }
     }
   }
@@ -1228,7 +1290,7 @@ void mientras_que() :
       etiqMQ = generacion_codigo.getEtiqueta();
       generacion_codigo.escribir(etiqMQ + ":");
     }
-    r = expresion()
+    r = expresion(Clase_parametro.VAL)
     {
       etiqFin = generacion_codigo.getEtiqueta();
       generacion_codigo.escribir("; Mq");
@@ -1271,7 +1333,7 @@ void seleccion() :
 {
   try
   {
-    < tSI > r = expresion()
+    < tSI > r = expresion(Clase_parametro.VAL)
     {
       etiqSINO = generacion_codigo.getEtiqueta();
       generacion_codigo.escribir("; Si");
@@ -1315,7 +1377,7 @@ void seleccion() :
 }
 
 // <tPARENTESIS_IZQ> (lista_expresiones())? <tPARENTESIS_DCHA>
-ArrayList < RegistroExpr > argumentos() :
+ArrayList < RegistroExpr > argumentos(ArrayList < Simbolo > parametros_accion) :
 {
   ArrayList < RegistroExpr > args = new ArrayList();
 }
@@ -1324,7 +1386,7 @@ ArrayList < RegistroExpr > argumentos() :
   {
     < tPARENTESIS_IZQ > 
     (
-    args = lista_expresiones()
+    args = lista_expresiones(parametros_accion)
     ) ? 
     < tPARENTESIS_DCHA >
     {
@@ -1339,20 +1401,41 @@ ArrayList < RegistroExpr > argumentos() :
 }
 
 // expresion() (<tCOMA> expresion())*
-ArrayList < RegistroExpr > lista_expresiones() :
+ArrayList < RegistroExpr > lista_expresiones(ArrayList < Simbolo > parametros_accion) :
 {
   ArrayList < RegistroExpr > args = new ArrayList();
   RegistroExpr r;
+  Clase_parametro param = null;
+  int i = 0;
 }
 {
   try
   {
-    r = expresion()
+    {
+      if (i < parametros_accion.size())
+      {
+        param = parametros_accion.get(i).getParametro();
+        i++;		
+      }
+    }
+    r = expresion(param)
     {
       args.add(r);
     }
     (
-    < tCOMA > r = expresion()
+    < tCOMA >
+    {
+      if (i < parametros_accion.size())
+      {
+        param = parametros_accion.get(i).getParametro();
+        i++;		
+      }
+      else
+      {
+        param = null;
+      }
+    }
+    r = expresion(param)
     {
       args.add(r);
     }
@@ -1369,7 +1452,7 @@ ArrayList < RegistroExpr > lista_expresiones() :
 }
 
 // expresion_simple() (operador_relacional() expresion_simple())*
-RegistroExpr expresion() :
+RegistroExpr expresion(Clase_parametro param) :
 {
   RegistroExpr r1, r2;
   Token token_operador;
@@ -1378,10 +1461,10 @@ RegistroExpr expresion() :
 {
   try
   {
-    r1 = expresion_simple() 
+    r1 = expresion_simple(param) 
     (
     token_operador = operador_relacional() 
-    r2 = expresion_simple()
+    r2 = expresion_simple(param)
     {
       operador = token_operador.image;
       r1 = comprobacionExpresion(r1, r2, operador);
@@ -1452,7 +1535,7 @@ Token operador_relacional() :
 }
 
 // termino() (operador_aditivo() termino())*
-RegistroExpr expresion_simple() :
+RegistroExpr expresion_simple(Clase_parametro param) :
 {
   RegistroExpr r1 = new RegistroExpr();
   RegistroExpr r2 = new RegistroExpr();
@@ -1462,10 +1545,10 @@ RegistroExpr expresion_simple() :
 {
   try
   {
-    r1 = termino() 
+    r1 = termino(param) 
     (
     token_operador = operador_aditivo() 
-    r2 = termino()
+    r2 = termino(param)
     {
       operador = token_operador.image;
       switch (operador)
@@ -1480,7 +1563,7 @@ RegistroExpr expresion_simple() :
         else
         {
           r1 = new RegistroExpr(r1, r2, operador);
-          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 16) || r1.valorEnt < (- Math.pow(2, 16))))
+          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 8) || r1.valorEnt < (- Math.pow(2, 8))))
           {
             error_semantico("Error de overflow/underflow al realizar la suma.");
             r1.valorEnt = null;
@@ -1498,7 +1581,7 @@ RegistroExpr expresion_simple() :
         else
         {
           r1 = new RegistroExpr(r1, r2, operador);
-          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 16) || r1.valorEnt < (- Math.pow(2, 16))))
+          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 8) || r1.valorEnt < (- Math.pow(2, 8))))
           {
             error_semantico("Error de overflow/underflow al realizar la resta.");
             r1.valorEnt = null;
@@ -1554,7 +1637,7 @@ Token operador_aditivo() :
 }
 
 // factor() (operador_multiplicativo() factor())* 
-RegistroExpr termino() :
+RegistroExpr termino(Clase_parametro param) :
 {
   RegistroExpr r1 = new RegistroExpr(), r2 = new RegistroExpr();
   Token token_operador;
@@ -1563,11 +1646,21 @@ RegistroExpr termino() :
 {
   try
   {
-    r1 = factor() 
+    r1 = factor(param)
+    {
+    }
     (
     token_operador = operador_multiplicativo() 
-    r2 = factor()
+    r2 = factor(param)
     {
+      if (r1.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
+      }
+      if (r2.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
+      }
       operador = token_operador.image;
       switch (operador)
       {
@@ -1581,7 +1674,7 @@ RegistroExpr termino() :
         else
         {
           r1 = new RegistroExpr(r1, r2, operador);
-          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 16) || r1.valorEnt < (- Math.pow(2, 16))))
+          if (r1.valorEnt != null && (r1.valorEnt >= Math.pow(2, 8) || r1.valorEnt < (- Math.pow(2, 8))))
           {
             error_semantico("Error de overflow/underflow al realizar la multiplicacion.");
             r1.valorEnt = null;
@@ -1716,16 +1809,17 @@ Token operador_multiplicativo() :
 | < tTRUE >
 | < tFALSE >
 */
-RegistroExpr factor() :
+RegistroExpr factor(Clase_parametro param) :
 {
-  RegistroExpr rExpr = new RegistroExpr();
+  RegistroExpr rExpr = new RegistroExpr(), rVec = new RegistroExpr();
   Token t;
   Simbolo s;
+  Boolean indice_seleccionado = false;
 }
 {
   try
   {
-    < tMENOS > rExpr = factor()
+    < tMENOS > rExpr = factor(param)
     {
       if ((rExpr.tipo != Tipo_variable.ENTERO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
       {
@@ -1736,15 +1830,23 @@ RegistroExpr factor() :
       {
         rExpr.valorEnt = - rExpr.valorEnt;
       }
+      if (rExpr.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
+      }
       generacion_codigo.escribir("NGI");
       return rExpr;
     }
-  | < tNOT > rExpr = factor()
+  | < tNOT > rExpr = factor(param)
     {
       if ((rExpr.tipo != Tipo_variable.BOOLEANO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
       {
         error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.BOOLEANO));
         rExpr.tipo = Tipo_variable.BOOLEANO;
+      }
+      if (rExpr.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
       }
       if (rExpr.valorBool != null)
       {
@@ -1753,11 +1855,11 @@ RegistroExpr factor() :
       generacion_codigo.escribir("NGB");
       return rExpr;
     }
-  | < tPARENTESIS_IZQ > rExpr = expresion() < tPARENTESIS_DCHA >
+  | < tPARENTESIS_IZQ > rExpr = expresion(param) < tPARENTESIS_DCHA >
     {
       return rExpr;
     }
-  | < tENTACAR > < tPARENTESIS_IZQ > rExpr = expresion() < tPARENTESIS_DCHA >
+  | < tENTACAR > < tPARENTESIS_IZQ > rExpr = expresion(param) < tPARENTESIS_DCHA >
     {
       if ((rExpr.tipo != Tipo_variable.ENTERO) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
       {
@@ -1767,14 +1869,22 @@ RegistroExpr factor() :
       {
         error_semantico("La expresion no se puede convertir en un caracter valido");
       }
+      if (rExpr.isVector)
+      {
+        error_semantico("No se puede transformar un vector a caracter");
+      }
       rExpr.tipo = Tipo_variable.CHAR;
       return rExpr;
     }
-  | < tCARAENT > < tPARENTESIS_IZQ > rExpr = expresion() < tPARENTESIS_DCHA >
+  | < tCARAENT > < tPARENTESIS_IZQ > rExpr = expresion(param) < tPARENTESIS_DCHA >
     {
       if ((rExpr.tipo != Tipo_variable.CHAR) && (rExpr.tipo != Tipo_variable.DESCONOCIDO))
       {
         error_semantico(new ExcepcionTipo(token, rExpr.tipo, Tipo_variable.CHAR));
+      }
+      if (rExpr.isVector)
+      {
+        error_semantico("No se puede transformar un vector a entero");
       }
       rExpr.tipo = Tipo_variable.ENTERO;
       return rExpr;
@@ -1798,6 +1908,41 @@ RegistroExpr factor() :
         generacion_codigo.escribir("; Variable " + t.image);
         generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + s.getDireccion());
         rExpr.tipo = s.getVariable();
+      }
+    }
+    (< tCORCHETE_IZQ > rVec = expresion(Clase_parametro.VAL) < tCORCHETE_DCHA >
+    {
+      if (!s.esVector())
+      {
+        error_semantico("El simbolo " + s.getNombre() + " no es un vector");
+      }
+      else if (rVec.tipo != Tipo_variable.DESCONOCIDO && rVec.tipo != Tipo_variable.ENTERO)
+      {
+        error_semantico("El tipo del indice del vector debe ser entero");
+      }
+      else if (rVec.tipo == Tipo_variable.ENTERO && rVec.valorEnt != null)
+      {
+        if (rVec.valorEnt >= Math.pow(2, 8) || rVec.valorEnt < - Math.pow(2, 8))
+        {
+          error_semantico("Overflow en el indice del vector");
+        }
+        if (rVec.valorEnt < 0)
+        {
+          error_semantico("El indice del vector debe ser positivo");
+        }
+        if (rVec.valorEnt >= s.getLongitud())
+        {
+          error_semantico("Se ha intentado acceder a una posicion mayor que la longitud del vector, posicion: " 
+          + rVec.valorEnt + " longitud: " + s.getLongitud());
+        }
+      }
+      indice_seleccionado = true;
+      generacion_codigo.escribir("PLUS");
+    }
+    ) ?
+    {
+      if (s != null)
+      {
         if (s.esParametro())
         {
           rExpr.parametro = s.getParametro();
@@ -1806,16 +1951,23 @@ RegistroExpr factor() :
             generacion_codigo.escribir("DRF");
           }
         }
-        if (s.esValor())
+        if (param != null && param == Clase_parametro.VAL)
         {
           generacion_codigo.escribir("DRF");
         }
-        else if (s.esVariable())
+        if (s.esVariable())
         {
           rExpr.parametro = Clase_parametro.REF;
         }
+        if (s.esVector() && !indice_seleccionado)
+        {
+          rExpr.isVector = true;
+        }
       }
-      return rExpr;	
+    }
+    // TODO: Comprobar resultado entero (O desconocido), que el resultado no sea mayor que la longitud del vector
+    {
+      return rExpr;
     }
   | t = < tVALOR_ENTERO >
     {
@@ -1833,13 +1985,6 @@ RegistroExpr factor() :
       generacion_codigo.escribir("STC " + (int) t.image.charAt(0));
       return rExpr;
     }
-    /*| t = < tSTRING >
-    {
-      rExpr = new RegistroExpr();
-      rExpr.valorChar = t.image;
-      rExpr.tipo = Tipo_variable.CHAR;
-      return rExpr;
-    }*/
   | t = < tTRUE >
     {
       rExpr = new RegistroExpr();
