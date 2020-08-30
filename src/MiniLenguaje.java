@@ -25,6 +25,10 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
   public static void main(String args []) throws ParseException, FileNotFoundException
   {
+    if (args.length < 1 || args.length > 2)
+    {
+      System.out.println("Argumentos incorrectos, uso:\u005cnMinilenguaje archivo_entrada [-v]");
+    }
     for (int i = 0; i < args.length; i++)
     {
       if (args [i].equals("-v"))
@@ -34,7 +38,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     FileInputStream file = null;
     try
     {
-      generacion_codigo = GeneracionCodigo.getInstancia(args [1]);
+      generacion_codigo = GeneracionCodigo.getInstancia(args [0]);
       file = new FileInputStream(args [0] + ".ml");
       MiniLenguaje parser = new MiniLenguaje(file);
     }
@@ -42,6 +46,8 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     {
       // TODO: Explicar instrucciones de ejecución
       System.err.print("ERROR: No se ha podido encontrar el archivo: " + args [0] + ".ml");
+      System.out.println("Argumentos incorrectos, uso:\u005cnMinilenguaje archivo_entrada [-v]");
+      System.out.println("(El archivo de entrada se especifica sin .ml)");
       System.exit(- 1);
     }
     catch (ArrayIndexOutOfBoundsException e)
@@ -56,11 +62,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     }
     catch (ParseException e)
     {
-      System.err.println("ERROR SINTACTICO en la linea" + token.beginLine + ", columna" +
-      token.beginColumn + ". Simbolo obtenido: " + token.image);
-      generacion_codigo.pararGeneracionCodigo();
-      e.printStackTrace();
-      getNextToken();
+      error_sintactico(e);
     }
     catch (Error e)
     {
@@ -71,8 +73,6 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
   private static void error_skipto(int kind)
   {
-    //ParseException e = generateParseException();
-    //System.out.println(e.toString());    
     Token t = token;
     while (t.kind != kind && t.kind != EOF)
     {
@@ -82,8 +82,6 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
   private static void error_skipto(int kind1, int kind2)
   {
-    //ParseException e = generateParseException();
-    //System.out.println(e.toString());    
     Token t;
     do
     {
@@ -95,14 +93,14 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
   private static void error_sintactico(ParseException e)
   {
-    System.err.println("ERROR SINTACTICO en la linea " + token.beginLine + ", columna " +
-    token.beginColumn + ". Simbolo obtenido: " + token.image + "\u005cnSe esperaba uno de: ");
+    Token t = MiniLenguaje.getNextToken();
+    System.err.println("ERROR SINTACTICO en la linea " + t.beginLine + ", columna " +
+    t.beginColumn + ". Simbolo obtenido: " + t.image + "\u005cnSe esperaba uno de: ");
     for (int i = 0; i < jj_expentries.size(); i++)
     {
       System.err.println("\u005ct" + tokenImage [jj_expentries.get(i) [0]]);
     }
     generacion_codigo.pararGeneracionCodigo();
-    getNextToken();
   }
 
   private static void error_semantico(Exception e)
@@ -180,48 +178,47 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       try {
         jj_consume_token(tPROGRAMA);
         t = jj_consume_token(tIDENTIFICADOR);
-      tabla_simbolos.introducir_programa(t.image, TBD);
-      etiq = generacion_codigo.getEtiqueta();
-      generacion_codigo.escribir("; Programa " + t.image);
-      generacion_codigo.escribir("ENP " + etiq);
+        tabla_simbolos.introducir_programa(t.image, TBD);
+        etiq = generacion_codigo.getEtiqueta();
+        generacion_codigo.escribir("; Programa " + t.image);
+        generacion_codigo.escribir("ENP " + etiq);
         jj_consume_token(tFIN_SENTENCIA);
       } catch (ParseException e) {
-    error_sintactico(e);
+      error_sintactico(e);
       }
       try {
         declaracion_variables();
       } catch (ParseException e) {
-    error_sintactico(e);
+      error_sintactico(e);
       }
       try {
         declaracion_acciones();
       } catch (ParseException e) {
-    error_sintactico(e);
+      error_sintactico(e);
       }
-    generacion_codigo.escribir("; Comienzo de " + t.image);
-    generacion_codigo.escribir(etiq + ":");
+      generacion_codigo.escribir("; Comienzo de " + t.image);
+      generacion_codigo.escribir(etiq + ":");
       try {
         bloque_sentencias();
       } catch (ParseException e) {
-    error_sintactico(e);
+      error_sintactico(e);
       }
-    tabla_simbolos.eliminar_programa();
-    generacion_codigo.escribir("; Fin de " + t.image);
-    generacion_codigo.escribir("LVP");
-
-    //System.out.println("Fin de " + t.image);
+      tabla_simbolos.eliminar_programa();
+      generacion_codigo.escribir("; Fin de " + t.image);
+      generacion_codigo.escribir("LVP");
+      //System.out.println("Fin de " + t.image);
 
       jj_consume_token(0);
+      generacion_codigo.escribirPrograma();
+      if (verbose)
+      {
+        pintarTablaVerbose();
+      }
+    } catch (ParseException e) {
+    error_sintactico(e);
     generacion_codigo.escribirPrograma();
     if (verbose)
     {
-      pintarTablaVerbose();
-    }
-    } catch (ParseException e) {
-        error_sintactico(e);
-        generacion_codigo.escribirPrograma();
-        if (verbose)
-        {
       pintarTablaVerbose();
     }
     }
@@ -407,6 +404,9 @@ public class MiniLenguaje implements MiniLenguajeConstants {
       dir = dir_prev;
     } catch (ParseException e) {
     error_sintactico(e);
+    declaracion_variables();
+    declaracion_acciones();
+    bloque_sentencias();
     }
   }
 
@@ -440,8 +440,21 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         for (int i = parametros.size() - 1; i >= 0; i--)
         {
           s = parametros.get(i);
-          generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + s.getDireccion());
-          generacion_codigo.escribir("ASGI");
+          if (s.isVector() && s.isValor())
+          {
+            for (int j = 0; j < s.getLongitud(); j++)
+            {
+              generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + s.getDireccion());
+              generacion_codigo.escribir("STC " + j);
+              generacion_codigo.escribir("PLUS");
+              generacion_codigo.escribir("ASGI");
+            }
+          }
+          else
+          {
+            generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + s.getDireccion());
+            generacion_codigo.escribir("ASGI");
+          }
         }
       }
       {if (true) return t;}
@@ -453,7 +466,6 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
 // ((<tPARENTESIS_IZQ> parametros()) (<tFIN_SENTENCIA> parametros())* <tPARENTESIS_DCHA>)? 
   static final public ArrayList < Simbolo > parametros_formales() throws ParseException {
-  if (MiniLenguaje.verbose) System.out.println("Parametros formales \u005cn");
   ArrayList < Simbolo > parametros = new ArrayList < Simbolo > ();
   ArrayList < Simbolo > masParametros;
     try {
@@ -510,7 +522,14 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         }
         else
         {
-          dir = dir + parametro.getLongitud();
+          if (parametro.esVector() && parametro.esReferencia())
+          {
+            dir = dir + 1;
+          }
+          else
+          {
+            dir = dir + parametro.getLongitud();
+          }
           parametros.add(parametro);
         }
       }
@@ -1151,7 +1170,7 @@ leer()  < tFIN_SENTENCIA >|
       generacion_codigo.escribir("; Ent");
       if (r.tipo != Tipo_variable.DESCONOCIDO && r.tipo != Tipo_variable.BOOLEANO)
       {
-        error_semantico("La condicien la seleccion debe ser un booleano");
+        error_semantico("La condicion la seleccion debe ser un booleano");
       }
       else if (r.tipo == Tipo_variable.BOOLEANO && r.valorBool != null)
       {

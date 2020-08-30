@@ -16,7 +16,52 @@
 | "\r"
 | "\t"
 | "\n"
-| &lt;"%" (~["\r","\n"])* ["\r","\n"]&gt; : {
+| &lt;["%"] ~["%"]&gt; : COMENT
+| &lt;["%"] ["%"]&gt; : COMENT_MULTI
+}
+
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+&lt;COMENT&gt; SKIP : {
+"\n" : DEFAULT
+}
+
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+&lt;COMENT&gt; SKIP : {
+&lt;~[]&gt;
+}
+
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+&lt;COMENT_MULTI&gt; SKIP : {
+"%%" : DEFAULT
+}
+
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+&lt;COMENT_MULTI&gt; SKIP : {
+&lt;~[]&gt;
 }
 
    </PRE>
@@ -87,25 +132,6 @@
    </PRE>
   </TD>
  </TR>
- <!-- Special token -->
- <TR>
-  <TD>
-<PRE>
-/*< LLAVE >
-TOKEN :
-{
-  < tIDENTIFICADOR_LLAVE : ([ "a"-"z", "_" ]) ([ "a"-"z", "_", "0"-"9" ])* > // TODO: ponerle que no pueda acabar en "_"
-  {
-        if (MiniLenguaje.verbose) System.out.println("IDENTIFICADOR DENTRO DE LLAVE(Valor: " + matchedToken + ")");
-  }
-| < tLLAVE_DCHA_LLAVE : "}" >
-  {
-        if (MiniLenguaje.verbose) System.out.println("LLAVE_DCHA");
-  }
-  : DEFAULT
-}*/</PRE>
-  </TD>
- </TR>
  <!-- Token -->
  <TR>
   <TD>
@@ -156,6 +182,17 @@ TOKEN :
   <TD>
    <PRE>
 &lt;STRING&gt; TOKEN : {
+&lt;tCHAR: ~["\""]&gt; : {
+}
+
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+&lt;STRING&gt; TOKEN : {
 &lt;tSTRING: (~["\""])+&gt; : {
 }
 
@@ -167,11 +204,613 @@ TOKEN :
   <TD>
    <PRE>
 &lt;DEFAULT&gt; TOKEN : {
-&lt;tIDENTIFICADOR: ["a"-"z","_"] (["a"-"z","_","0"-"9"])*&gt; : {
+&lt;tIDENTIFICADOR: ["a"-"z","_"] (["a"-"z","_","0"-"9"])* ["a"-"z","0"-"9"] | ["a"-"z","_"]&gt; : {
 | &lt;tVALOR_ENTERO: (["0"-"9"])+&gt; : {
 | &lt;tVALOR_DECIMAL: (["0"-"9"])+ "." (["0"-"9"])+&gt; : {
 }
 
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
+   </PRE>
+  </TD>
+ </TR>
+ <!-- Token -->
+ <TR>
+  <TD>
+   <PRE>
    </PRE>
   </TD>
  </TR>
@@ -182,114 +821,53 @@ TOKEN :
  <TR>
   <TD>
 <PRE>
-/*int programa() :
-{}
-{
-  (
-    < tCLASE >
-  | < tMETODO >
-  | < tENTERO >
-  | < tDECIMAL >
-  | < tLLAVE_IZQ >
-  | < tLLAVE_DCHA >
-  | < tVALOR_ENTERO >
-  | < tVALOR_DECIMAL >
-  | < tPROGRAMA >
-  | < tIGUAL >
-  | < tMAS >
-  | < tMENOS >
-  | < tPOR >
-  | < tDIV >
-  | < tFIN_SENTENCIA >
-  | < tSTRING >
-  | < tCOMA >
-  | < tBOOLEANO >
-  | < tCARACTER >
-  | < tPARENTESIS_IZQ >
-  | < tPARENTESIS_DCHA >
-  | < tCORCHETE_IZQ >
-  | < tCORCHETE_DCHA >
-  | < tIDENTIFICADOR >
-  | < tVAR >
-  | < tAND >
-  | < tOR >
-  | < tNOT >
-  | < tPRINCIPIO >
-  | < tFIN >
-  | < tSI >
-  | < tENT >
-  | < tSI_NO >
-  | < tFSI >
-  | < tMQ >
-  | < tFMQ >
-  | < tESCRIBIR >
-  | < tLEER >
-  | < tMOD >
-  | < tTRUE >
-  | < tFALSE >
-  | < tENTACAR >
-  | < tCARAENT >
-  | < tACCION >
-  | < tVAL >
-  | < tREF >
-  | < tMAYOR >
-  | < tMENOR >
-  | < tMAI >
-  | < tMEI >
-  | < tNI >
-  | < tOPAS >
-  )+
-  {
-    return 0;
-  }
-}*/
+/************************************
+************* PROGRAMA **************
+*************************************/
 
-/*void programa() :
-{
-}
-{
-  < tCLASE > < tIDENTIFICADOR > < tLLAVE_IZQ >
-  (
-    metodo()
-  )+
-  < tLLAVE_DCHA > < EOF >
-}
-
-void sentencia() :
-{
-}
-{
-  < tENTERO > < tIDENTIFICADOR > < tOPAS > < tVALOR_ENTERO > < tFIN_SENTENCIA >
-| < tDECIMAL > < tIDENTIFICADOR > < tOPAS > < tVALOR_DECIMAL > < tFIN_SENTENCIA >
-}
-
-void metodo() :
-{
-}
-{
-  < tMETODO > < tIDENTIFICADOR > "{"
-  (
-    sentencia()
-  )*
-  "}"
-}*/</PRE>
+// <tPROGRAMA> <tIDENTIFICADOR> <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
+</PRE>
   </TD>
  </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod1">programa</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tPROGRAMA&gt; &lt;tIDENTIFICADOR&gt; &lt;tFIN_SENTENCIA&gt; <A HREF="#prod2">declaracion_variables</A> <A HREF="#prod3">declaracion_acciones</A> <A HREF="#prod4">bloque_sentencias</A></TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tPROGRAMA&gt; &lt;tIDENTIFICADOR&gt; &lt;tFIN_SENTENCIA&gt; <A HREF="#prod2">declaracion_variables</A> <A HREF="#prod3">declaracion_acciones</A> <A HREF="#prod4">bloque_sentencias</A> &lt;EOF&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// (declaracion()<tFIN_SENTENCIA>)*
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod2">declaracion_variables</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>( <A HREF="#prod5">declaracion</A> &lt;tFIN_SENTENCIA&gt; )*</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// tipo_variables() identificadores()
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod5">declaracion</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod6">tipo_variables</A> <A HREF="#prod7">identificadores</A></TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tENTERO> | <tCARACTER> | <tBOOLEANO> | <tDECIMAL>
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod6">tipo_variables</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
@@ -310,43 +888,107 @@ void metodo() :
 <TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>&lt;tDECIMAL&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tIDENTIFICADOR>(<tCOMA><tIDENTIFICADOR>)*
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod7">identificadores</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tIDENTIFICADOR&gt; ( &lt;tCOMA&gt; &lt;tIDENTIFICADOR&gt; )*</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tIDENTIFICADOR&gt; ( &lt;tCORCHETE_IZQ&gt; &lt;tVALOR_ENTERO&gt; &lt;tCORCHETE_DCHA&gt; )? ( &lt;tCOMA&gt; &lt;tIDENTIFICADOR&gt; ( &lt;tCORCHETE_IZQ&gt; &lt;tVALOR_ENTERO&gt; &lt;tCORCHETE_DCHA&gt; )? )*</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// (declaracion_accion())*
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod3">declaracion_acciones</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>( <A HREF="#prod8">declaracion_accion</A> )*</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// cabecera_accion() <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod8">declaracion_accion</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod9">cabecera_accion</A> &lt;tFIN_SENTENCIA&gt; <A HREF="#prod2">declaracion_variables</A> <A HREF="#prod3">declaracion_acciones</A> <A HREF="#prod4">bloque_sentencias</A></TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tACCION> <tIDENTIFICADOR> parametros_formales()
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod9">cabecera_accion</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>&lt;tACCION&gt; &lt;tIDENTIFICADOR&gt; <A HREF="#prod10">parametros_formales</A></TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// ((<tPARENTESIS_IZQ> parametros()) (<tFIN_SENTENCIA> parametros())* <tPARENTESIS_DCHA>)? 
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod10">parametros_formales</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>( ( &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod11">parametros</A> ) ( &lt;tFIN_SENTENCIA&gt; <A HREF="#prod11">parametros</A> )* &lt;tPARENTESIS_DCHA&gt; )?</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// expresion() (<tCOMA> expresion())*
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod12">lista_parametros</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod13">expresion</A> ( &lt;tCOMA&gt; <A HREF="#prod13">expresion</A> )*</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod7">identificadores</A></TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// clase_parametros() tipo_variables() lista_parametros()
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod11">parametros</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod14">clase_parametros</A> <A HREF="#prod6">tipo_variables</A> <A HREF="#prod12">lista_parametros</A></TD>
+<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod13">clase_parametros</A> <A HREF="#prod6">tipo_variables</A> <A HREF="#prod12">lista_parametros</A></TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tVAL> | <tREF>
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod14">clase_parametros</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod13">clase_parametros</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>&lt;tVAL&gt;</TD>
 </TR>
@@ -355,96 +997,201 @@ void metodo() :
 <TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>&lt;tREF&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tPRINCIPIO> lista_sentencias() <tFIN>
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod4">bloque_sentencias</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tPRINCIPIO&gt; <A HREF="#prod15">lista_sentencias</A> &lt;tFIN&gt;</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tPRINCIPIO&gt; <A HREF="#prod14">lista_sentencias</A> &lt;tFIN&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// (sentencia())* 
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod15">lista_sentencias</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod14">lista_sentencias</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>( <A HREF="#prod16">sentencia</A> )*</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>( <A HREF="#prod15">sentencia</A> )+</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+/*
+leer()  < tFIN_SENTENCIA >|
+  escribir() < tFIN_SENTENCIA >|
+  < tIDENTIFICADOR > [asignacion() |  invocacion_accion() ] < tFIN_SENTENCIA > |
+  seleccion()  |
+  mientras_que()
+  */</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod16">sentencia</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod15">sentencia</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod17">leer</A> &lt;tFIN_SENTENCIA&gt;</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>( <A HREF="#prod16">leer</A> &lt;tFIN_SENTENCIA&gt; | <A HREF="#prod17">escribir</A> &lt;tFIN_SENTENCIA&gt; | &lt;tIDENTIFICADOR&gt; ( <A HREF="#prod18">asignacion</A> | <A HREF="#prod19">invocacion_accion</A> )? | <A HREF="#prod20">seleccion</A> | <A HREF="#prod21">mientras_que</A> )</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tLEER> <tPARENTESIS_IZQ> lista_asignables() <tPARENTESIS_DCHA>
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod18">escribir</A> &lt;tFIN_SENTENCIA&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tIDENTIFICADOR&gt; ( <A HREF="#prod19">asignacion</A> | <A HREF="#prod20">invocacion_accion</A> )? &lt;tFIN_SENTENCIA&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod21">seleccion</A></TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod22">mientras_que</A></TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod17">leer</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod16">leer</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tLEER&gt; &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod23">lista_asignables</A> &lt;tPARENTESIS_DCHA&gt;</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tLEER&gt; &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod22">lista_asignables</A> &lt;tPARENTESIS_DCHA&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tIDENTIFICADOR> (<tCOMA> <tIDENTIFICADOR>)*
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod23">lista_asignables</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod22">lista_asignables</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>&lt;tIDENTIFICADOR&gt; ( &lt;tCOMA&gt; &lt;tIDENTIFICADOR&gt; )*</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tESCRIBIR> <tPARENTESIS_IZQ> lista_escribibles() <tPARENTESIS_DCHA>
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod18">escribir</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod17">escribir</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tESCRIBIR&gt; &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod24">lista_escribibles</A> &lt;tPARENTESIS_DCHA&gt;</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tESCRIBIR&gt; &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod23">lista_escribibles</A> &lt;tPARENTESIS_DCHA&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// expresion() (<tCOMA> expresion())*
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod24">lista_escribibles</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod23">lista_escribibles</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod13">expresion</A> ( &lt;tCOMA&gt; <A HREF="#prod13">expresion</A> )*</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>( <A HREF="#prod24">expresion</A> | &lt;tSTRING&gt; ) ( &lt;tCOMA&gt; ( <A HREF="#prod24">expresion</A> | &lt;tSTRING&gt; ) )*</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tOPAS> expresion() 
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod19">asignacion</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod18">asignacion</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tOPAS&gt; <A HREF="#prod13">expresion</A></TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>( &lt;tCORCHETE_IZQ&gt; <A HREF="#prod24">expresion</A> &lt;tCORCHETE_DCHA&gt; )? &lt;tOPAS&gt; <A HREF="#prod24">expresion</A> &lt;tFIN_SENTENCIA&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// argumentos() 
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod20">invocacion_accion</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod19">invocacion_accion</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod25">argumentos</A></TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>( <A HREF="#prod25">argumentos</A> )? &lt;tFIN_SENTENCIA&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tMQ> expresion() lista_sentencias() <tFMQ>
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod22">mientras_que</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod21">mientras_que</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tMQ&gt; <A HREF="#prod13">expresion</A> <A HREF="#prod15">lista_sentencias</A> &lt;tFMQ&gt;</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tMQ&gt; <A HREF="#prod24">expresion</A> <A HREF="#prod14">lista_sentencias</A> &lt;tFMQ&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tSI> expresion() <tENT> lista_sentencias() (<tSI_NO> lista_sentencias())?  <tFSI>
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod21">seleccion</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod20">seleccion</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tSI&gt; <A HREF="#prod13">expresion</A> &lt;tENT&gt; <A HREF="#prod15">lista_sentencias</A> ( &lt;tSI_NO&gt; <A HREF="#prod15">lista_sentencias</A> )? &lt;tFSI&gt;</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tSI&gt; <A HREF="#prod24">expresion</A> &lt;tENT&gt; <A HREF="#prod14">lista_sentencias</A> ( &lt;tSI_NO&gt; <A HREF="#prod14">lista_sentencias</A> )? &lt;tFSI&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tPARENTESIS_IZQ> (lista_expresiones())? <tPARENTESIS_DCHA>
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod25">argumentos</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>&lt;tPARENTESIS_IZQ&gt; ( <A HREF="#prod26">lista_expresiones</A> )? &lt;tPARENTESIS_DCHA&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// expresion() (<tCOMA> expresion())*
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod26">lista_expresiones</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod13">expresion</A> ( &lt;tCOMA&gt; <A HREF="#prod13">expresion</A> )*</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod24">expresion</A> ( &lt;tCOMA&gt; <A HREF="#prod24">expresion</A> )*</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// expresion_simple() (operador_relacional() expresion_simple())*
+</PRE>
+  </TD>
+ </TR>
 <TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod13">expresion</A></TD>
+<TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod24">expresion</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod27">expresion_simple</A> ( <A HREF="#prod28">operador_relacional</A> <A HREF="#prod27">expresion_simple</A> )*</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod27">expresion_simple</A> ( <A HREF="#prod28">operador_relacional</A> <A HREF="#prod27">expresion_simple</A> )?</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tMAYOR> | <tMENOR> | <tMAI> | <tMEI> | <tNI> | <tIGUAL>
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod28">operador_relacional</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
@@ -475,11 +1222,27 @@ void metodo() :
 <TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>&lt;tIGUAL&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// termino() (operador_aditivo() termino())*
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod27">expresion_simple</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod29">termino</A> ( <A HREF="#prod30">operador_aditivo</A> <A HREF="#prod29">termino</A> )*</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tMAS> | <tMENOS> | <tOR>
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod30">operador_aditivo</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
@@ -495,11 +1258,27 @@ void metodo() :
 <TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>&lt;tOR&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// factor() (operador_multiplicativo() factor())* 
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod29">termino</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE><A HREF="#prod31">factor</A> ( <A HREF="#prod32">operador_multiplicativo</A> <A HREF="#prod31">factor</A> )*</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+// <tPOR> | <tDIV> | <tMOD> | <tAND>
+</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod32">operador_multiplicativo</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
@@ -520,60 +1299,29 @@ void metodo() :
 <TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
 <TD ALIGN=LEFT VALIGN=BASELINE>&lt;tAND&gt;</TD>
 </TR>
+ <!-- Special token -->
+ <TR>
+  <TD>
+<PRE>
+/*
+	< tMENOS > factor()
+| < tNOT > factor()
+| < tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tENTACAR > <tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tCARAENT > <tPARENTESIS_IZQ > expresion() < tPARENTESIS_DCHA >
+| < tIDENTIFICADOR >
+| < tVALOR_ENTERO >
+| < tVALOR_DECIMAL >
+| < tSTRING >
+| < tTRUE >
+| < tFALSE >
+*/</PRE>
+  </TD>
+ </TR>
 <TR>
 <TD ALIGN=RIGHT VALIGN=BASELINE><A NAME="prod31">factor</A></TD>
 <TD ALIGN=CENTER VALIGN=BASELINE>::=</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tMENOS&gt; <A HREF="#prod31">factor</A></TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tNOT&gt; <A HREF="#prod31">factor</A></TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tPARENTESIS_IZQ&gt; <A HREF="#prod13">expresion</A> &lt;tPARENTESIS_DCHA&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tENTACAR&gt; &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod13">expresion</A> &lt;tPARENTESIS_DCHA&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tCARAENT&gt; &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod13">expresion</A> &lt;tPARENTESIS_DCHA&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tIDENTIFICADOR&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tVALOR_ENTERO&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tVALOR_DECIMAL&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tSTRING&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tTRUE&gt;</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=BASELINE></TD>
-<TD ALIGN=CENTER VALIGN=BASELINE>|</TD>
-<TD ALIGN=LEFT VALIGN=BASELINE>&lt;tFALSE&gt;</TD>
+<TD ALIGN=LEFT VALIGN=BASELINE>( &lt;tMENOS&gt; <A HREF="#prod31">factor</A> | &lt;tNOT&gt; <A HREF="#prod31">factor</A> | &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod24">expresion</A> &lt;tPARENTESIS_DCHA&gt; | &lt;tENTACAR&gt; &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod24">expresion</A> &lt;tPARENTESIS_DCHA&gt; | &lt;tCARAENT&gt; &lt;tPARENTESIS_IZQ&gt; <A HREF="#prod24">expresion</A> &lt;tPARENTESIS_DCHA&gt; | &lt;tIDENTIFICADOR&gt; ( &lt;tCORCHETE_IZQ&gt; <A HREF="#prod24">expresion</A> &lt;tCORCHETE_DCHA&gt; )? | &lt;tVALOR_ENTERO&gt; | &lt;tCHAR&gt; | &lt;tTRUE&gt; | &lt;tFALSE&gt; )</TD>
 </TR>
 </TABLE>
 </BODY>

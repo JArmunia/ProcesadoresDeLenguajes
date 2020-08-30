@@ -30,7 +30,7 @@ public class GeneracionCodigo {
     // Singleton
     public static GeneracionCodigo getInstancia(String filePath) {
 	if (instancia == null) {
-	    instancia = new GeneracionCodigo(filePath);
+	    instancia = new GeneracionCodigo(filePath + ".code");
 	}
 	return instancia;
     }
