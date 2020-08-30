@@ -3,7 +3,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import clasesJava.*;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Map;
+import java.util.TreeMap;
 
 /** Token Manager. */
 public class MiniLenguajeTokenManager implements MiniLenguajeConstants
@@ -1194,233 +1195,233 @@ static void TokenLexicalActions(Token matchedToken)
    {
       case 11 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("CLASE");
+    MiniLenguaje.addToVerboseMap("tCLASE");
          break;
       case 12 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("METODO");
+    MiniLenguaje.addToVerboseMap("tMETODO");
          break;
       case 13 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("PROGRAMA");
+    MiniLenguaje.addToVerboseMap("tPROGRAMA");
          break;
       case 14 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("VAR");
+    MiniLenguaje.addToVerboseMap("tVAR");
          break;
       case 15 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("AND");
+    MiniLenguaje.addToVerboseMap("tAND");
          break;
       case 16 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("OR");
+    MiniLenguaje.addToVerboseMap("tOR");
          break;
       case 17 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("NOT");
+    MiniLenguaje.addToVerboseMap("tNOT");
          break;
       case 18 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("PRINCIPIO");
+    MiniLenguaje.addToVerboseMap("tPRINCIPIO");
          break;
       case 19 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("FIN");
+    MiniLenguaje.addToVerboseMap("tFIN");
          break;
       case 20 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("SI");
+    MiniLenguaje.addToVerboseMap("tSI");
          break;
       case 21 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("ENT");
+    MiniLenguaje.addToVerboseMap("tENT");
          break;
       case 22 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("SI_NO");
+    MiniLenguaje.addToVerboseMap("tSI_NO");
          break;
       case 23 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("FSI");
+    MiniLenguaje.addToVerboseMap("tFSI");
          break;
       case 24 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("MQ");
+    MiniLenguaje.addToVerboseMap("tMQ");
          break;
       case 25 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("FMQ");
+    MiniLenguaje.addToVerboseMap("tFMQ");
          break;
       case 26 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("ESCRIBIR");
+    MiniLenguaje.addToVerboseMap("tESCRIBIR");
          break;
       case 27 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("LEER");
+    MiniLenguaje.addToVerboseMap("tLEER");
          break;
       case 28 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("MOD");
+    MiniLenguaje.addToVerboseMap("tMOD");
          break;
       case 29 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("TRUE");
+    MiniLenguaje.addToVerboseMap("tTRUE");
          break;
       case 30 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("FALSE");
+    MiniLenguaje.addToVerboseMap("tFALSE");
          break;
       case 31 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("ENTACAR");
+    MiniLenguaje.addToVerboseMap("tENTACAR");
          break;
       case 32 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("CARAENT");
+    MiniLenguaje.addToVerboseMap("tCARAENT");
          break;
       case 33 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("ACCION");
+    MiniLenguaje.addToVerboseMap("tACCION");
          break;
       case 34 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("VAL");
+    MiniLenguaje.addToVerboseMap("tVAL");
          break;
       case 35 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("REF");
+    MiniLenguaje.addToVerboseMap("tREF");
          break;
       case 36 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("ENTERO");
+    MiniLenguaje.addToVerboseMap("tENTERO");
          break;
       case 37 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("DECIMAL");
+    MiniLenguaje.addToVerboseMap("tDECIMAL");
          break;
       case 38 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("BOOLEANO");
+    MiniLenguaje.addToVerboseMap("tBOOLEANO");
          break;
       case 39 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("CARACTER");
+    MiniLenguaje.addToVerboseMap("tCARACTER");
          break;
       case 40 :
         image.append(jjstrLiteralImages[40]);
         lengthOfMatch = jjstrLiteralImages[40].length();
-    if (MiniLenguaje.verbose) System.out.println("LLAVE_IZQ");
+    MiniLenguaje.addToVerboseMap("tLLAVE_IZQ");
          break;
       case 41 :
         image.append(jjstrLiteralImages[41]);
         lengthOfMatch = jjstrLiteralImages[41].length();
-    if (MiniLenguaje.verbose) System.out.println("LLAVE_DCHA");
+    MiniLenguaje.addToVerboseMap("tLLAVE_DCHA");
          break;
       case 42 :
         image.append(jjstrLiteralImages[42]);
         lengthOfMatch = jjstrLiteralImages[42].length();
-    if (MiniLenguaje.verbose) System.out.println("PARENTESIS_IZQ");
+    MiniLenguaje.addToVerboseMap("tPARENTESIS_IZQ");
          break;
       case 43 :
         image.append(jjstrLiteralImages[43]);
         lengthOfMatch = jjstrLiteralImages[43].length();
-    if (MiniLenguaje.verbose) System.out.println("PARENTESIS_DCHA");
+    MiniLenguaje.addToVerboseMap("tPARENTESIS_DCHA");
          break;
       case 44 :
         image.append(jjstrLiteralImages[44]);
         lengthOfMatch = jjstrLiteralImages[44].length();
-    if (MiniLenguaje.verbose) System.out.println("CORCHETE_IZQ");
+    MiniLenguaje.addToVerboseMap("tCORCHETE_IZQ");
          break;
       case 45 :
         image.append(jjstrLiteralImages[45]);
         lengthOfMatch = jjstrLiteralImages[45].length();
-    if (MiniLenguaje.verbose) System.out.println("CORCHETE_DCHA");
+    MiniLenguaje.addToVerboseMap("tCORCHETE_DCHA");
          break;
       case 46 :
         image.append(jjstrLiteralImages[46]);
         lengthOfMatch = jjstrLiteralImages[46].length();
-    if (MiniLenguaje.verbose) System.out.println("OPAS");
+    MiniLenguaje.addToVerboseMap("tOPAS");
          break;
       case 47 :
         image.append(jjstrLiteralImages[47]);
         lengthOfMatch = jjstrLiteralImages[47].length();
-    if (MiniLenguaje.verbose) System.out.println("IGUAL");
+    MiniLenguaje.addToVerboseMap("tIGUAL");
          break;
       case 48 :
         image.append(jjstrLiteralImages[48]);
         lengthOfMatch = jjstrLiteralImages[48].length();
-    if (MiniLenguaje.verbose) System.out.println("FIN_SENTENCIA");
+    MiniLenguaje.addToVerboseMap("tFIN_SENTENCIA");
          break;
       case 49 :
         image.append(jjstrLiteralImages[49]);
         lengthOfMatch = jjstrLiteralImages[49].length();
-    if (MiniLenguaje.verbose) System.out.println("COMA");
+    MiniLenguaje.addToVerboseMap("tCOMA");
          break;
       case 50 :
         image.append(jjstrLiteralImages[50]);
         lengthOfMatch = jjstrLiteralImages[50].length();
-    if (MiniLenguaje.verbose) System.out.println("MAS");
+    MiniLenguaje.addToVerboseMap("tMAS");
          break;
       case 51 :
         image.append(jjstrLiteralImages[51]);
         lengthOfMatch = jjstrLiteralImages[51].length();
-    if (MiniLenguaje.verbose) System.out.println("MENOS");
+    MiniLenguaje.addToVerboseMap("tMENOS");
          break;
       case 52 :
         image.append(jjstrLiteralImages[52]);
         lengthOfMatch = jjstrLiteralImages[52].length();
-    if (MiniLenguaje.verbose) System.out.println("POR");
+    MiniLenguaje.addToVerboseMap("tPOR");
          break;
       case 53 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("DIV");
+    MiniLenguaje.addToVerboseMap("tDIV");
          break;
       case 54 :
         image.append(jjstrLiteralImages[54]);
         lengthOfMatch = jjstrLiteralImages[54].length();
-    if (MiniLenguaje.verbose) System.out.println("MAYOR O IGUAL");
+    MiniLenguaje.addToVerboseMap("tMAI");
          break;
       case 55 :
         image.append(jjstrLiteralImages[55]);
         lengthOfMatch = jjstrLiteralImages[55].length();
-    if (MiniLenguaje.verbose) System.out.println("MENOR O IGUAL");
+    MiniLenguaje.addToVerboseMap("tMEI");
          break;
       case 56 :
         image.append(jjstrLiteralImages[56]);
         lengthOfMatch = jjstrLiteralImages[56].length();
-    if (MiniLenguaje.verbose) System.out.println("NI");
+    MiniLenguaje.addToVerboseMap("tNI");
          break;
       case 57 :
         image.append(jjstrLiteralImages[57]);
         lengthOfMatch = jjstrLiteralImages[57].length();
-    if (MiniLenguaje.verbose) System.out.println("MAYOR");
+    MiniLenguaje.addToVerboseMap("tMAYOR");
          break;
       case 58 :
         image.append(jjstrLiteralImages[58]);
         lengthOfMatch = jjstrLiteralImages[58].length();
-    if (MiniLenguaje.verbose) System.out.println("MENOR");
+    MiniLenguaje.addToVerboseMap("tMENOR");
          break;
       case 61 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("CHAR (Valor: " + matchedToken + ")");
+    MiniLenguaje.addToVerboseMap("tCHAR");
          break;
       case 62 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("STRING (Valor: " + matchedToken + ")");
+    MiniLenguaje.addToVerboseMap("tSTRING");
          break;
       case 63 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("IDENTIFICADOR (Valor: " + matchedToken + ")");
+    MiniLenguaje.addToVerboseMap("tIDENTIFICADOR");
          break;
       case 64 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("VALOR_ENTERO (Valor: " + matchedToken + ")");
+    MiniLenguaje.addToVerboseMap("tENTERO");
          break;
       case 65 :
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
-    if (MiniLenguaje.verbose) System.out.println("VALOR_DECIMAL (Valor: " + matchedToken + ")");
+    MiniLenguaje.addToVerboseMap("tDECIMAL");
          break;
       default :
          break;

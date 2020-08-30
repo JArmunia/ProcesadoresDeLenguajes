@@ -7,6 +7,8 @@ public class RegistroExpr {
     public Float valorDecimal = null;
     public Clase_parametro parametro = Clase_parametro.VAL;
     public boolean isVector = false;
+    public int longitud = 1;
+    public Simbolo simbolo;
 
     public Tipo_variable tipo;
 
@@ -39,7 +41,7 @@ public class RegistroExpr {
 	    operacionViable = true;
 	}
 
-	switch (op) {
+	switch (op.toLowerCase()) {
 
 	case "+":
 	    if (operacionViable && r1.valorEnt != null && r2.valorEnt != null) {

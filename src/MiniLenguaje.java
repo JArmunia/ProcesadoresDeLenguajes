@@ -3,10 +3,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import clasesJava.*;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class MiniLenguaje implements MiniLenguajeConstants {
   public static boolean verbose = false;
+
+  public static TreeMap < String, Integer > verboseMap = new TreeMap < String, Integer > ();
 
   public static Tabla_simbolos tabla_simbolos;
 
@@ -38,7 +41,7 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     catch (FileNotFoundException e)
     {
       // TODO: Explicar instrucciones de ejecución
-      System.err.print("ERROR: No se ha podido encontrar el archivo: " + args [0]);
+      System.err.print("ERROR: No se ha podido encontrar el archivo: " + args [0] + ".ml");
       System.exit(- 1);
     }
     catch (ArrayIndexOutOfBoundsException e)
@@ -53,15 +56,16 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     }
     catch (ParseException e)
     {
-      System.err.println(e.getMessage());
+      System.err.println("ERROR SINTACTICO en la linea" + token.beginLine + ", columna" +
+      token.beginColumn + ". Simbolo obtenido: " + token.image);
+      generacion_codigo.pararGeneracionCodigo();
       e.printStackTrace();
-      //MiniLenguaje.ReInit(System.in);
+      getNextToken();
     }
     catch (Error e)
     {
-      e.printStackTrace();
-      System.err.println(e.getMessage());
-      System.exit(0);
+      System.err.println("ERROR LEXICO en la linea " + token.beginLine + ", columna " +
+      token.beginColumn + ". Simbolo no reconocido: " + token.image);
     }
   }
 
@@ -91,8 +95,12 @@ public class MiniLenguaje implements MiniLenguajeConstants {
 
   private static void error_sintactico(ParseException e)
   {
-    System.err.println("ERROR SINTACTICO: " + e.getMessage());
-    e.printStackTrace();
+    System.err.println("ERROR SINTACTICO en la linea " + token.beginLine + ", columna " +
+    token.beginColumn + ". Simbolo obtenido: " + token.image + "\u005cnSe esperaba uno de: ");
+    for (int i = 0; i < jj_expentries.size(); i++)
+    {
+      System.err.println("\u005ct" + tokenImage [jj_expentries.get(i) [0]]);
+    }
     generacion_codigo.pararGeneracionCodigo();
     getNextToken();
   }
@@ -126,38 +134,97 @@ public class MiniLenguaje implements MiniLenguajeConstants {
     return resultado;
   }
 
+  public static void addToVerboseMap(String tok)
+  {
+    if (verboseMap.containsKey(tok))
+    {
+      verboseMap.put(tok, verboseMap.get(tok) + 1);
+    }
+    else
+    {
+      verboseMap.put(tok, 1);
+    }
+  }
+
+  public static void pintarTablaVerbose()
+  {
+    System.out.println("Tabla resumen del programa:");
+    System.out.println("+-----------------------+----------------+");
+    System.out.println("|TOKEN\u005ct\u005ct\u005ct|APARICIONES\u005ct |");
+    System.out.println("+-----------------------+----------------+");
+    String espacios = "";
+    for (Map.Entry < String, Integer > entry : verboseMap.entrySet())
+    {
+      espacios = "";
+      for (int i = 0; i < 16 - entry.getKey().length(); i++)
+      {
+        espacios += " ";
+      }
+      System.out.println("|" + entry.getKey() + espacios + "\u005ct|\u005ct" + entry.getValue() + "\u005ct |");
+    }
+    System.out.println("+-----------------------+----------------+");
+  }
+
 /************************************
 ************* PROGRAMA **************
 *************************************/
 
 // <tPROGRAMA> <tIDENTIFICADOR> <tFIN_SENTENCIA> declaracion_variables() declaracion_acciones() bloque_sentencias()
   static final public void programa(boolean verbose) throws ParseException {
-    tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
-    nivel = 0;
-    dir = DIR_INICIAL;
-    String etiq;
-    Token t;
-    jj_consume_token(tPROGRAMA);
-    t = jj_consume_token(tIDENTIFICADOR);
-    tabla_simbolos.introducir_programa(t.image, TBD);
-    etiq = generacion_codigo.getEtiqueta();
-    generacion_codigo.escribir("; Programa " + t.image);
-    generacion_codigo.escribir("ENP " + etiq);
-    jj_consume_token(tFIN_SENTENCIA);
-    declaracion_variables();
-
-    declaracion_acciones();
-    //System.out.println("Fin de declaracion de acciones");
+  tabla_simbolos = Tabla_simbolos.inicializar_tabla(31);
+  nivel = 0;
+  dir = DIR_INICIAL;
+  String etiq = "";
+  Token t = null;
+    try {
+      try {
+        jj_consume_token(tPROGRAMA);
+        t = jj_consume_token(tIDENTIFICADOR);
+      tabla_simbolos.introducir_programa(t.image, TBD);
+      etiq = generacion_codigo.getEtiqueta();
+      generacion_codigo.escribir("; Programa " + t.image);
+      generacion_codigo.escribir("ENP " + etiq);
+        jj_consume_token(tFIN_SENTENCIA);
+      } catch (ParseException e) {
+    error_sintactico(e);
+      }
+      try {
+        declaracion_variables();
+      } catch (ParseException e) {
+    error_sintactico(e);
+      }
+      try {
+        declaracion_acciones();
+      } catch (ParseException e) {
+    error_sintactico(e);
+      }
     generacion_codigo.escribir("; Comienzo de " + t.image);
     generacion_codigo.escribir(etiq + ":");
-    bloque_sentencias();
+      try {
+        bloque_sentencias();
+      } catch (ParseException e) {
+    error_sintactico(e);
+      }
     tabla_simbolos.eliminar_programa();
     generacion_codigo.escribir("; Fin de " + t.image);
     generacion_codigo.escribir("LVP");
-    generacion_codigo.escribirPrograma();
+
     //System.out.println("Fin de " + t.image);
 
-    jj_consume_token(0);
+      jj_consume_token(0);
+    generacion_codigo.escribirPrograma();
+    if (verbose)
+    {
+      pintarTablaVerbose();
+    }
+    } catch (ParseException e) {
+        error_sintactico(e);
+        generacion_codigo.escribirPrograma();
+        if (verbose)
+        {
+      pintarTablaVerbose();
+    }
+    }
   }
 
 // (declaracion()<tFIN_SENTENCIA>)*
@@ -323,10 +390,11 @@ public class MiniLenguaje implements MiniLenguajeConstants {
   static final public void declaracion_accion() throws ParseException {
   int dir_prev = dir;
   dir = DIR_INICIAL;
-  String etiq = generacion_codigo.getEtiqueta();
+  String etiquetaAccion = generacion_codigo.getEtiqueta(), etiq = generacion_codigo.getEtiqueta();
   Token t;
     try {
-      t = cabecera_accion(etiq);
+      generacion_codigo.escribir(etiquetaAccion + ":");
+      t = cabecera_accion(etiquetaAccion);
       generacion_codigo.escribir("JMP " + etiq);
       jj_consume_token(tFIN_SENTENCIA);
       declaracion_variables();
@@ -639,7 +707,7 @@ leer()  < tFIN_SENTENCIA >|
           {
             generacion_codigo.escribir("DRF");
           }
-          else if (s.esChar())
+          if (s.esChar())
           {
             generacion_codigo.escribir("RD 0");
           }
@@ -921,7 +989,40 @@ leer()  < tFIN_SENTENCIA >|
       {
         error_semantico("Tipos incompatibles en la asignacion");
       }
+      if (r.isVector && r.longitud != s.getLongitud())
+      {
+        error_semantico("No se puede realizar la asignacion porque los vectores no tienen la misma longitud\u005cnLongitud izq: "
+        + s.getLongitud() + " longitud dch: " + r.longitud);
+      }
       generacion_codigo.escribir("ASG");
+      if (r.isVector && r.longitud == s.getLongitud())
+      {
+        for (int i = 1; i < s.getLongitud(); i++)
+        {
+          generacion_codigo.escribir("; Asignacion " + r.simbolo.getNombre() + "[" + i + "]");
+          generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + s.getDireccion());
+          if (s.esParametro() && s.esReferencia())
+          {
+            generacion_codigo.escribir("DRF");
+          }
+          generacion_codigo.escribir("STC " + i);
+          generacion_codigo.escribir("PLUS");
+          if (r.simbolo.esParametro() && r.simbolo.esReferencia())
+          {
+            generacion_codigo.escribir("SRF " + (nivel - r.simbolo.getNivel()) + " " + (r.simbolo.getDireccion()));
+            generacion_codigo.escribir("DRF");
+            generacion_codigo.escribir("STC " + i);
+            generacion_codigo.escribir("PLUS");
+            generacion_codigo.escribir("ASG");
+          }
+          else
+          {
+            generacion_codigo.escribir("SRF " + (nivel - r.simbolo.getNivel()) + " " + (r.simbolo.getDireccion() + i));
+            generacion_codigo.escribir("DRF");
+            generacion_codigo.escribir("ASG");
+          }
+        }
+      }
       jj_consume_token(tFIN_SENTENCIA);
     } catch (ParseException e) {
     error_sintactico(e);
@@ -984,6 +1085,12 @@ leer()  < tFIN_SENTENCIA >|
               " deberia ser un parametro por referencia, pero se ha pasado un parametro por valor" +
               " en la accion " + accion.getNombre());
             }
+            if (paramOriginal.getLongitud() != param.longitud)
+            {
+              error_semantico("El parametro en la posicion " + i +
+              " no tiene la longitud necesitada, deberia tener longitud " + paramOriginal.getLongitud() +
+              " pero tiene longitud " + param.longitud);
+            }
           }
         }
         generacion_codigo.escribir("; Invocacion accion " + accion.getNombre());
@@ -1036,11 +1143,12 @@ leer()  < tFIN_SENTENCIA >|
   RegistroExpr r;
   String etiqSINO, etiqFin;
     try {
+      generacion_codigo.escribir("; Si");
       jj_consume_token(tSI);
       r = expresion(Clase_parametro.VAL);
       etiqSINO = generacion_codigo.getEtiqueta();
-      generacion_codigo.escribir("; Si");
       generacion_codigo.escribir("JMF " + etiqSINO);
+      generacion_codigo.escribir("; Ent");
       if (r.tipo != Tipo_variable.DESCONOCIDO && r.tipo != Tipo_variable.BOOLEANO)
       {
         error_semantico("La condicien la seleccion debe ser un booleano");
@@ -1171,6 +1279,10 @@ leer()  < tFIN_SENTENCIA >|
       case tMENOR:
         token_operador = operador_relacional();
         r2 = expresion_simple(param);
+      if (r1.isVector || r2.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
+      }
       operador = token_operador.image;
       r1 = comprobacionExpresion(r1, r2, operador);
       switch (operador)
@@ -1265,8 +1377,12 @@ leer()  < tFIN_SENTENCIA >|
         }
         token_operador = operador_aditivo();
         r2 = termino(param);
+      if (r1.isVector || r2.isVector)
+      {
+        error_semantico("No se puede operar con un vector");
+      }
       operador = token_operador.image;
-      switch (operador)
+      switch (operador.toLowerCase())
       {
         case "+" :
         if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
@@ -1383,7 +1499,7 @@ leer()  < tFIN_SENTENCIA >|
         error_semantico("No se puede operar con un vector");
       }
       operador = token_operador.image;
-      switch (operador)
+      switch (operador.toLowerCase())
       {
         case "*" :
         if ((r1.tipo != Tipo_variable.ENTERO) && (r1.tipo != Tipo_variable.DESCONOCIDO)
@@ -1636,6 +1752,14 @@ leer()  < tFIN_SENTENCIA >|
         generacion_codigo.escribir("; Variable " + t.image);
         generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + s.getDireccion());
         rExpr.tipo = s.getVariable();
+        if (s.esParametro())
+        {
+          rExpr.parametro = s.getParametro();
+          if (s.esReferencia())
+          {
+            generacion_codigo.escribir("DRF");
+          }
+        }
       }
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case tCORCHETE_IZQ:
@@ -1675,14 +1799,6 @@ leer()  < tFIN_SENTENCIA >|
         }
       if (s != null)
       {
-        if (s.esParametro())
-        {
-          rExpr.parametro = s.getParametro();
-          if (s.esReferencia())
-          {
-            generacion_codigo.escribir("DRF");
-          }
-        }
         if (param != null && param == Clase_parametro.VAL)
         {
           generacion_codigo.escribir("DRF");
@@ -1694,8 +1810,10 @@ leer()  < tFIN_SENTENCIA >|
         if (s.esVector() && !indice_seleccionado)
         {
           rExpr.isVector = true;
+          rExpr.longitud = s.getLongitud();
         }
       }
+      rExpr.simbolo = s;
       {if (true) return rExpr;}
         break;
       case tVALOR_ENTERO:
