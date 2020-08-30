@@ -1076,7 +1076,7 @@ leer()  < tFIN_SENTENCIA >|
       generacion_codigo.escribir("ASG");
       if (r.isVector && r.longitud == s.getLongitud())
       {
-        for (int i = 1; i < s.getLongitud(); i++)
+        for (int i = 0; i < s.getLongitud(); i++)
         {
           generacion_codigo.escribir("; Asignacion " + r.simbolo.getNombre() + "[" + i + "]");
           generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + s.getDireccion());
