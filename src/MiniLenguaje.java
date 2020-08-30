@@ -440,13 +440,11 @@ public class MiniLenguaje implements MiniLenguajeConstants {
         for (int i = parametros.size() - 1; i >= 0; i--)
         {
           s = parametros.get(i);
-          if (s.isVector() && s.isValor())
+          if (s.esVector() && s.esValor())
           {
-            for (int j = 0; j < s.getLongitud(); j++)
+            for (int j = s.getLongitud() - 1; j >= 0; j--)
             {
-              generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + s.getDireccion());
-              generacion_codigo.escribir("STC " + j);
-              generacion_codigo.escribir("PLUS");
+              generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + (s.getDireccion() + j));
               generacion_codigo.escribir("ASGI");
             }
           }
@@ -779,12 +777,6 @@ leer()  < tFIN_SENTENCIA >|
       generacion_codigo.escribir("; Escribir ");
       escribibles = lista_escribibles();
       jj_consume_token(tPARENTESIS_DCHA);
-      //System.out.println("Escribibles en la linea: " + token.beginLine);
-      //System.out.println(Arrays.toString(escribibles.toArray()));
-      for (RegistroExpr r : escribibles)
-      {
-      //System.out.println(r.valorChar);
-      }
     } catch (ParseException e) {
     error_sintactico(e);
     }
@@ -839,7 +831,41 @@ leer()  < tFIN_SENTENCIA >|
       }
       else if (r.tipo == Tipo_variable.BOOLEANO)
       {
-        generacion_codigo.escribir("WRT 1"); // TODO: Poner que escriba verdadero y falso
+        String etiquetaFALSO = generacion_codigo.getEtiqueta();
+        String etiquetaFIN = generacion_codigo.getEtiqueta();
+        generacion_codigo.escribir("JMF " + etiquetaFALSO);
+        generacion_codigo.escribir("STC \u005c"V\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"e\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"r\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"d\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"a\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"d\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"e\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"r\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"o\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("JMP " + etiquetaFIN);
+        generacion_codigo.escribir( etiquetaFALSO + ":");
+
+        generacion_codigo.escribir("STC \u005c"F\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"a\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"l\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"s\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"o\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir( etiquetaFIN + ":");
       }
         break;
       case tSTRING:
@@ -912,7 +938,41 @@ leer()  < tFIN_SENTENCIA >|
       }
       else if (r.tipo == Tipo_variable.BOOLEANO)
       {
-        generacion_codigo.escribir("WRT 1"); // TODO: Poner que escriba verdadero y falso
+        String etiquetaFALSO = generacion_codigo.getEtiqueta();
+        String etiquetaFIN = generacion_codigo.getEtiqueta();
+        generacion_codigo.escribir("JMF " + etiquetaFALSO);
+        generacion_codigo.escribir("STC \u005c"V\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"e\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"r\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"d\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"a\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"d\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"e\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"r\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"o\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("JMP " + etiquetaFIN);
+        generacion_codigo.escribir( etiquetaFALSO + ":");
+
+        generacion_codigo.escribir("STC \u005c"F\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"a\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"l\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"s\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir("STC \u005c"o\u005c"");
+        generacion_codigo.escribir("WRT 0");
+        generacion_codigo.escribir( etiquetaFIN + ":");
       }
           break;
         case tSTRING:
@@ -1821,6 +1881,15 @@ leer()  < tFIN_SENTENCIA >|
         if (param != null && param == Clase_parametro.VAL)
         {
           generacion_codigo.escribir("DRF");
+          if (s.esVector() && !indice_seleccionado)
+          {
+            for (int j = 0; j < s.getLongitud(); j++)
+            {
+              generacion_codigo.escribir("; Posicion " + j + " vector " + s.getNombre());
+              generacion_codigo.escribir("SRF " + (nivel - s.getNivel()) + " " + (s.getDireccion() + j));
+              generacion_codigo.escribir("DRF");
+            }
+          }
         }
         if (s.esVariable())
         {
